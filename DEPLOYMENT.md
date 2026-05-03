@@ -39,6 +39,13 @@ GROQ_API_KEY = "your_actual_groq_api_key_here"
 
 ## Troubleshooting
 
+### Error: "metadata-generation-failed"
+**Cause:** Package build failure on Streamlit Cloud  
+**Solution:**
+- This is now fixed in the latest version
+- Go to your app settings → Reboot app
+- Or make a small commit and push to trigger redeployment
+
 ### Error: "ModuleNotFoundError: No module named 'groq'"
 **Solution:**
 - This is expected if groq fails to install
