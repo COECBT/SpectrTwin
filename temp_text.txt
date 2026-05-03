@@ -1,0 +1,6569 @@
+Spectrochimica Acta Part A: Molecular and Biomolecular Spectroscopy 334 (2025) 125861
+Contents lists available atScienceDirect
+SpectrochimicaActaPartA:
+MolecularandBiomolecularSpectroscopy
+journal homepage: www.journals.elsevier.com/spectrochimica-acta-part-a-
+molecular-and-biomolecular-spectroscopy
+Comparing machine learning methods on Raman spectra from eight different
+spectrometers
+Christoph Langea ,∗,Maxim Borisyaka,Martin Köglere,Stefan Bornb,Andreas Ziehec,d,
+Peter Neubauera,M. Nicolas Cruz Bournazoua
+aTechnische Universität Berlin, Faculty III Process Sciences, Institute of Biotechnology, Chair of Bioprocess Engineering, Straße des 17. Juni
+135, Berlin, 10623, Berlin, Germany
+bTechnische Universität Berlin, Orientierungsstudium MINTgrün, Straße des 17. Juni 135, Berlin, 10623, Berlin, Germany
+cBerlin Institute for the Foundations of Learning and Data, Ernst-Reuter Platz 7, Berlin, 10587, Berlin, Germany
+dMachine Learning Group, Technische Universität Berlin, Marchstraße 23, Berlin, 10587, Berlin, Germany
+eVTT Technical Research Centre of Finland, Kaitoväylä 1, Oulu, 90590, Finland
+G R A P H I C A L A B S T R A C T
+H I G H L I G H T S
+• Used 8 different spectrometer to measure Raman spectra.
+• Predict concentrations of glucose, acetate and magnesium sulfate.
+• Train convolutional neural network (CNN) on spectra from all devices.
+• CNN learns robust cross device features.
+• CNN outperforms partial least squares model.
+A R T I C L E I N F O A B S T R A C T
+Dataset link:https://git.tu-berlin.de/bvt-htbd/ In biotechnology, Raman Spectroscopy is becoming increasingly popular as a process analytical technology
+kiwi/tf3/raman-and-nir/-/tree/main/raman_an (PAT) for measuring substrates, metabolites, and product-related concentrations. By recording the vibrational
+d_nir/raw_data/data_as_csv?ref_type=heads,htt modes of molecular bonds, it provides information non-invasively in a high-dimensional spectrum. Machine
+ps://git.tu-berlin.de/bvt-htbd/kiwi/tf3/raman- learning models are used to transform these spectral data into meaningful concentrations of species. Typically,
+and-nir
+one assumes a linear relationship between intensity and concentrations and learns these relationships using a
+Keywords: partial least squares (PLS) model. However, in biological cultivations with a very large number of components,
+Raman spectroscopy nonlinear models such as convolutional neural networks (CNN) offer significant advantages. In this work, we
+Machine learning
+∗ Corresponding author.
+E-mail address: christoph.lange@tu-berlin.de(C. Lange).
+https://doi.org/10.1016/j.saa.2025.125861
+Received 18 October 2024; Received in revised form 31 January 2025; Accepted 3 February 2025
+Available online 11 February 2025
+1386-1425/© 2025 The Authors. Published by Elsevier B.V. This is an open access article under the CC BY license ( http://creativecommons.org/licenses/by/4.0/) .
+C. Lange et al. Spectrochimica Acta Part A: Molecular and Biomolecular Spectroscopy 334 (2025) 125861
+Partial least squares show that training one CNN on spectra from eight different spectrometers significantly outperforms PLS models.
+Convolutional neural network Specifically, we created samples with known concentrations of glucose, sodium acetate and magnesium sulfate
+and measured more than 2200 spectra of these samples with eight different spectrometers. We trained one
+CNN on the spectra from all eight datasets simultaneously. This shows great potential for laboratories with
+data from more than one spectrometer as they do not need to spend extra effort in calibrating individual PLS
+models, but they can use a joint CNN, which even improves the overall accuracy. In addition, we compare the
+eight different spectrometers against each other. The results suggest that three spectrometers are better suited
+for quantifying glucose, sodium acetate, and magnesium sulfate given the models.
+Raman spectroscopy is rapidly gaining importance in biotechnology CNNs are gaining popularity in biotechnology [19]. Their applica-
+as an efficient tool for measuring the concentration of numerous com- tions range from CNNs used for spectra preprocessing [20], to clas-
+pounds online in a non-invasive manner. In upstream bioprocessing, sification problems [9] in various fields such as medicine, biology
+for example, it is used to track vibrational modes of molecular bonds and biotechnology [21–25]. However, solving regression problems with
+that reveal information about the cultivation state [1], i.e. inferring CNNs, such as inferring concentrations, is still quite rare in biotechno-
+the product concentration or predicting substrate parameter from a logical applications. It requires more data compared to classification
+Raman spectrum [2,3]. Although information about substrate concen- problems or means of compensating for data shortages such as genera-
+trations in Raman spectra is less precise compared to methods such tive adversarial networks [26,27]. Adaptions of CNN architectures like
+as high-performance liquid chromatography, measurements happen ResNet [28,29], which improve training speed on image data, are also
+within seconds and are non-invasive [4]. becoming more popular in Raman spectra [30,31].
+When recording Raman spectra, one emits a monochrome laser In this work, we present the spectra of 3-component aqueous so-
+beam onto a sample where photons interact with vibrational modes of lutions measured with8different spectrometers from various vendors
+molecular bonds in an inelastic manner. The spectrometer records the together with the 3 concentrations of glucose, sodium acetate and
+photons after these interactions, and the spectrum essentially provides magnesium sulfate. We propose this data set to serve as a bench-
+a histogram of the energy differences absorbed by the sample. The mark for model comparisons of Raman spectra. So we compare the
+generated spectrum is high-dimensional, with each entry representing performance of PLS models and a CNN against each other. Finally,
+one level of energy difference that is strongly correlated to each other we compare the reconstruction of concentrations from the spectra of
+(see Fig. 1). If a molecule contains Raman active vibration modes,
+different spectrometers, given the methods PLS and CNN.
+peaks in the spectrum are observed that represent these bonds, while
+the height of these peaks is proportional to the concentration of the
+1. Material
+molecule in the sample [5]. As these relationships are hard to quantify
+manually from the spectra, training a machine learning model to infer
+Let us first describe the data set in detail. In particular, we illustrate
+the respective concentration yields decent results [2].
+the properties of the samples created in the laboratory and characterize
+In our study, we focus on the standard machine learning model for
+the way we recorded the spectra.
+Raman spectra, the linear Partial Least Squares (PLS), and a nonlinear
+1.1. Sample generation
+Convolutional Neural Networks (CNN). Applied to spectra CNNs learn
+to efficiently capture the spectra’s peaks in translation-invariant, local,
+We choose the three substances glucose, sodium acetate, and mag-
+and hierarchical features. They mostly replaced other types of nonlinear
+nesium sulfate that are meaningful in the context of Escherichia coli
+models such as Support Vector Machines (SVM) [6,7] or Random
+fermentations [32]. Glucose serves as a carbon source, acetate is an
+Forests [8] which were more common for Raman spectra a decade ago.
+aerobic overflow metabolite and anaerobic by-product, and magnesium
+Generally, non-linear models are equipped with handling imperfect
+sulfate is often part of culture media as a cofactor to improve the mi-
+measurement conditions in real-world scenarios.
+crobial conversion of substrates to products [33]. Moreover, we choose
+Typically, PLS is the model of choice for Raman spectra [9] assum-
+concentrations according to the scales that we would expect during a
+ing a linear relationship. To improve these linear conditions one uses
+batch fermentation [32]. For glucose (D(+)-Glucose Monohydrat, Carl
+prepossessing methods like filters, baseline correction or normalization Roth, Karlsruhe, Germany) we chose no more than17 g L−1, for sodium
+methods. Unfortunately, there is a huge variety of preprocessing steps,
+acetate (Sodium acetate, Honeywell International Inc., Charlotte, North
+and they come with quite some hyperparameters [10] that need to be Carolina) the maximum is around 3 g L−1 and for magnesium sulfate
+chosen. Therefore, a specific preprocessing procedure that is defined we added no more than4 g L−1(Magnesium Sulfate Heptahydrate, Carl
+by the method and its hyperparameters is highly customized to the Roth GmbH, Karlsruhe, Germany). The detailed concentrations of each
+exact conditions during the recording (medium, cell line, bioreactor, sample are depicted inAppendix A. At first we created stock solutions
+and cultivation mode) to which they were calibrated. Despite these of the pure substances and then combined them to create samples of
+difficulties, PLS has been shown to perform well in cell culture pro- varying concentrations in5 mLdeep well plates with micropipettes up
+cesses [2,11–15]. However, finding the appropriate preprocessing steps to 1 mL and stored them in the freezer. In this process, we expect
+is a challenging problem [16]. Additionally, for bacteria cultivations inaccuracies arising from the storage of the substances, the weighing
+with high cell densities, the measurement conditions of the substrates of them, the preparation of the stock solutions, and the mixing of
+become less consistent, making it more difficult to use linear models. them. Therefore, we determined the concentrations of glucose, sodium
+Neural networks, are known to handle non-linear relationships well, acetate, and magnesium sulfate with an HT analyzer (Cedex BioHT,
+and as the structure of a Raman spectrum comes with the concept of Roche Diagnostics GmbH, Mannheim, Germany). For this specific HT
+proximity in terms of the wavenumbers, convolutions along this axis analyzer we used the kits Glucose Bio HT, Acetate V2 Bio HT, and
+are a natural choice. Consequently, one could use convolutional neural Magnesium V2 Bio HT (all Roche Diagnostics GmbH, Mannheim, Ger-
+networks (CNN), which are very common in computer vision [17], by many). These kits determine concentrations through enzymatic assays.
+treating a spectrum as a 1D image. CNNs are more adaptive to mul- The manufacturer specifies the error of these kits with 10%, 15%, and
+timodal data and can learn customized preprocessing steps as well as 10%, respectively. We take these measurements as the ground truth
+dimensionality reduction all in one model. Moreover, they handle non- labels of the samples. To measure the Raman spectra of these samples,
+Gaussian noise and account for beam misalignment, pixel malfunctions, we transferred a fraction of them from the deep-well plate to 96-well
+or the presence of additional substances [18]. plates with each well containing 250 μL. So for each spectrometer we
+2
+C. Lange et al. Spectrochimica Acta Part A: Molecular and Biomolecular Spectroscopy 334 (2025) 125861
+Table 1
+Characteristics of the Raman data sets: For our comparison we gathered data from samples with known concentrations. Therefore, we used spectrometers from different manufacturers
+with the following specifications. The exact concentrations of the samples for each dataset can be found in the CSV filehttps://git.tu-berlin.de/bvt-htbd/kiwi/tf3/raman-and-nir/-
+/tree/main/raman_and_nir/raw_data/data_as_csv?ref_type=heads.
+Manufacturer Anton paar Anton paar Kaiser Metrohm Mettler toledo Tec5 Timegate Tornado
+Model name Cora 5001 Cora 5001 RXN1™ i-Raman Plus React Raman™802L Multi- Spec©Raman Pico- Raman M2 HyperFlux™Pro plus
+Wavelengthnm 532 785 785 785 785 785 532 785
+Exposure time [s] 5 5 10 15 6 12 90a 1.6
+Laser power [mW] 50 450 200 455 400 500 – 494
+Scans per sample 5 5 1 5 5 5 1 5
+Num samples 54 54 134 80 55 76 133 73
+Lower [cm−1] 300 300 300 300 300 300 300 300
+Upper [cm−1] 3500 2300 1942 3350 3200 3210 2000 3300
+Dimension 1651 1001 5472 1875 2901 2911 486 3001
+Material sample container Plastic Plastic Aluminum Plastic Plastic Plastic Aluminum Plastic
+Mean glucose [g L−1] 3.24 3.24 3.23 2.86 3.18 2.89 3.22 2.7
+Mean sodium acetate [g L−1] 0.58 0.58 0.81 0.63 0.57 0.64 0.81 0.66
+Mean magnesium sulfate [g L−1] 1.34 1.34 0.56 0.9 1.31 0.92 0.55 1.08
+a The exposure time for this timegated spectrometer that separates the raman signal from fluorescence is difficult to compare with non-timegated spectrometers. These90 sconsist
+of numerous repetitions that follow the pattern of the pulsed laser.
+prepared specific 96-well plates. In this way, we could make sure that Fig. 1. Glucose has several significant peaks on top of the water
+the samples measured by the different spectrometers all come from the background. The sodium acetate peaks, whose concentration is much
+same mixture. lower, are difficult to notice except for the one around920 1 . The peak
+cm
+of magnesium sulfate is the most obvious, which eases its detection. For
+1.2. Spectra recording all substances, the height of the peaks correlates with the respective
+concentrations. Moreover, we show the Raman spectra of the pure
+We measured all samples placing the spectrometer’s probe above substances inFig. 1
+100 μLof sample, making sure that the focal point is within the sample.
+The spectra recording occurred within a dark enclosure to reduce 2. Methods
+the impact of surrounding light. As containers for the sample, we
+used Greiner 96-well microtiter plates (Frickenhausen, Germany) or an In this work, we compare the two model types PLS and CNN. First,
+aluminum well. The microtiter plates are made of plastic which adds we present PLS and its preprocessing method and continue with the
+additional peaks to the spectra compared to the aluminum wells, which CNN model.
+are not Raman active. Looking at the spectra inAppendix C, the plastic
+peaks are located at positions different from those of the peaks of the 2.1. Models
+substances of interest. As we shall observe later on, this does not have
+an impact on the identifiability of the substances of interest. 2.1.1. Partial least squares pipeline
+Because the spectrometers were available for different amounts of For the PLS model, we use a pipeline of steps to infer the con-
+time, we do not have exactly the same set of samples for all of the centrations from the Raman spectra. This pipeline consists of two
+spectrometers. The number of samples and other characteristics of the preprocessing steps, i.e. multiplicative scatter correction, followed by
+spectrometers and the measurement procedure are shown in Table 1. a Savitzky–Golay filter. We use the ‘‘PLS2’’ algorithm as the final step
+We used appropriate exposure times for the different spectrometers and of the pipeline, as it takes care of the dimensionality reduction and
+measured all samples at room temperature. When measuring a specific the regression model. This method is a very common choice among
+sample, we repeated the same spectrum acquisition5times except for numerous other methods for performing preprocessing [10]. Therefore,
+the Kaiser and Timegate spectrometers by which we measured a single we performed preliminary experiments not shown here that showed
+spectrum per sample. that the combination of a Savitzky–Golay filter and multiplicative
+Within the eight spectrometers, six have an emission wavelength scatter correction performs better compared to combining a Savitzky–
+of 785 nm while two use a shorter wavelength of 532 nm. The shorter Golay filter with different baseline-removal methods. InAppendix Cwe
+emission wavelengths come with an increased Raman effect as well provide details of the changes in the spectra of each device before and
+as a higher fluorescence [34]. However, none of the three substances after every preprocessing step.
+of interest show any fluorescence, which is why the different wave-
+lengths do not really matter here. The next important difference in
+Multiplicative scatter correction. The idea of multiplicative scatter cor-
+the spectrometer characteristics is that the Timegate device uses laser
+rection is to make all spectra𝑋
+𝑛∶
+similar with the help of a reference
+pulses to excite the molecules for a short time and record the induced
+spectrum such as the mean spectrum𝑥∈R𝑁 of the training set [39].
+Stokes-Raman scattering. However, after recording the Raman signal,
+Given the mean spectrum𝑥
+the sensor stops the recording to reduce the fraction of fluorescence 1 ∑
+𝑁
+𝑥 = 𝑋 (1)
+that occurs after Stokes scattering. Because the system operating in a 𝑚 𝑁 𝑛𝑚
+𝑛=1
+psrepetition time, the fraction of90 swhere active recording occurs is
+small and the laser power is not comparable to the lasers of the other
+for the𝑛th spectrum𝑋
+𝑛∶
+we find parameters𝜃
+0
+𝑛, 𝜃
+1
+𝑛∈R
+devices that run constantly [35] (Table 1). 𝑥̂𝑛=𝜃𝑛+𝜃𝑛𝑥 𝜃𝑛= ar g min ∑( 𝑥̂𝑛 −𝑋 )2 𝑆 ⊂{1,…, 𝑀} (2)
+0 1 𝜃𝑛 𝑚 𝑛𝑚
+𝑚∈𝑆
+1.3. Spectra characteristics that approximate the current spectrum with the help of the mean spec-
+trum, i.e. we do linear regression in each spectrum component, but with
+As all samples are aqueous solutions with relatively low concen- the same coefficients𝜃𝑛, 𝜃𝑛for all components𝑚. These coefficients are
+0 1
+trations, most molecules in the samples are actually water molecules used to map the spectrum𝑋
+𝑛∶
+which have Raman activate bonds. Consequently, all spectra are dom- 𝑋 −𝜃𝑛
+inated by the water background, i.e., like the example spectrum in 𝑋 𝑛𝑚 ↦ 𝑛𝑚 𝜃𝑛 0 (3)
+1
+3
+C. Lange et al. Spectrochimica Acta Part A: Molecular and Biomolecular Spectroscopy 334 (2025) 125861
+Fig. 1. Spectra peaks visualization: Here we plot one spectrum of the Kaiser data set with relatively high concentrations for all three labels. We used peak locations from the
+literature [36–38], but just considered those with at least some visual indications in this spectrum. The concentrations of the corresponding sample are10.59 g L−1Glucose,1.11 g L−1
+Sodium Acetate and3.48 g L−1 Magnesium Sulfate.
+such that all spectra have a similar background. Sometimes we chose as‖𝑢‖= 1. We use the left singular vector to obtain the latent variable
+to pick a subset of the spectra components as we have a very big peak directions in the data space
+r
+s
+e
+q
+l
+u
+a
+a
+t
+r
+e
+e
+d
+s
+t
+f
+o
+i t
+m
+(E
+ag
+q
+n
+.
+e
+(
+s
+2
+i
+)
+u
+)
+m
+w
+s
+o
+u
+u
+l
+l
+f
+d
+a t
+l
+e
+e a
+a
+d
+t 9
+t
+8
+o
+0
+th
+c
+1
+m
+is
+.
+r
+I
+e
+n
+g
+c
+i
+l
+o
+u
+n
+d i
+d
+n
+o
+g
+m
+th
+in
+is
+a t
+p
+i
+e
+n
+a
+g
+k
+t
+i
+h
+n
+e
+t
+s
+h
+q
+e
+u
+l
+a
+e
+r
+a
+e
+s
+d
+t
+𝜉 𝑚 =𝑋 𝑢 𝑚 (7)
+residuals and thus to a misalignment of the baselines. with maximal covariance according to Eq. (6). The next step is to
+approximate𝑋 and𝑌 using the latent variable𝜉 . Therefore we fit𝑋
+𝑚
+Savitzky-Golay filter. The idea of a Savitzky–Golay filter is to smooth with𝜉 linearly:
+𝑚
+the incoming spectrum while keeping the peaks of the signal. This
+𝑋≈𝜉 (𝜉𝑇𝜉 )−1𝜉𝑇𝑋 (8)
+smoothing procedure reduces the additive noise component that the 𝑚 𝑚 𝑚 𝑚
+⏟⏞⏞⏞⏞⏞⏞⏟⏞⏞⏞⏞⏞⏞⏟
+measurement of a spectrum includes. For smoothing the spectrum, we linear regression coefficients
+fit a polynomial of degree𝐷and coefficients𝛽
+𝑑 For 𝑌 we start from 𝜉 as well and approximate 𝑌 via maximum
+𝐷 𝑚
+𝑞 (𝑧) = ∑ 𝛽 𝑧𝑑 (4) likelihood.
+𝛽 𝑑
+𝑑=0 𝑌 ≈𝜉 (𝜉𝑇𝜉 )−1𝜉𝑇𝑌 (9)
+𝑚 𝑚 𝑚 𝑚
+to a moving window of the spectrum that has width 𝑤. For the 𝑛th
+⏟⏞⏞⏞⏞⏞⏟⏞⏞⏞⏞⏞⏟
+spectrum 𝑋 ∈ R𝑀 and the 𝑚th component we take the window of linearregressioncoefficients
+odd width𝑤
+𝑛∶
+with the following shifts𝑊 = (−𝑤−1,−𝑤−3,…,𝑤−1) Now we update 𝑋 and 𝑌 by subtracting the parts that are already
+2 2 2 represented in𝜉 :
+𝑚
+𝑋
+𝑛(𝑚−𝑤 2 −1)
+, 𝑋
+𝑛(𝑚−𝑤 2 −3)
+,…, 𝑋
+𝑛(𝑚+𝑤 2 −1) 𝑋=𝑋−𝜉 𝑚 (𝜉 𝑚 𝑇𝜉 𝑚 )−1𝜉 𝑚 𝑇𝑋 𝑌 =𝑌 −𝜉 𝑚 (𝜉 𝑚 𝑇𝜉 𝑚 )−1𝜉 𝑚 𝑇𝑌 (10)
+that is centered at𝑚. We get the maximum likelihood solution
+and start the whole process again by finding more singular vectors
+𝛽 𝑚 ∗ =arg 𝛽 min 𝑧 ∑ ∈𝑊 (𝑋 𝑛(𝑚+𝑧) −𝑞 𝛽 (𝑧))2 𝑋 𝑛𝑚 ↦𝑞 𝛽 (ℎ 𝑚 ∗ )(𝑧= 0) (5) u co si m ng p o E n q e . n ( t 6 s ) t . h W at e w r e e p c e h a o t s t e h i b s e f p o r r o e c h e a d n u d r . e S u o n t w il e w c e o m re b a i c n h e t t h h e e n in u d m iv b i e d r u o a f l
+and use that to map𝑋 𝑛𝑚 to the mid-point of that polynomial at𝑧= 0 score vectors𝜉 𝑚 to get𝛯= (𝜉 1 ,…, 𝜉 𝑘 )and
+ifℎ= 0or to the hth derivative. Due to the smoothing effect, we can 𝑌̂ =𝛯(𝛯𝑇𝛯)−1𝛯𝑇𝑌 (11)
+remove part of the noise that is contained in the spectrum and hand it
+over to the next step. to get the predictions𝑌̂.
+Partial least squares algorithm. As a first step, the pre-processed spec- 2.1.2. Convolutional neural network
+tra 𝑋 are normalized per wavenumber and the concentrations 𝑌 per In comparison to the linear approach presented above, a CNN learns
+substance. Then we use a variant of the partial least squares algorithm transformations tailored to the specific spectra that fulfill a similar role
+called ‘‘PLS2’’ in the chemometric literature [40,41]. The objective is as the prepossessing steps and the dimensionality reduction seen for
+to find𝑀 singular vector pairs of the covariance matrix𝐶
+𝑋 𝑌
+=𝑋𝑇𝑌. PLS. We show the structure of the CNN’s architecture inFig. 2.
+We start with𝑚= 1and look for the pair of unit vectors𝑢 and𝑣 that
+𝑚 𝑚 Overall architecture. The overall architecture is a modification of the
+maximize
+widely used ResNet Architecture [43] that was originally designed for
+(𝑢 𝑚 , 𝑣 𝑚 ) = argmax 𝑢𝑇𝑋𝑇𝑌 𝑣= argmax Cov(𝑋 𝑢, 𝑌 𝑣) (6) images and, therefore, uses 2 spatial dimensions. We replace these
+𝑢,𝑣,‖𝑢‖=‖𝑣‖=1 𝑢,𝑣,‖𝑢‖=‖𝑣‖=1 layers with the corresponding 1-dimensional convolutions [21]. In
+the covariance [42]. This is equivalent to finding the singular vectors Fig. 2(a) we present the feedforward neural network with the con-
+of𝐶
+𝑋 𝑌
+that belong to the biggest singular value𝜆, volutional part that consists of 8 groups that contain two residual
+building blocks each. The details of the building blocks are shown in
+𝐶
+𝑋 𝑌
+𝑣=𝜆𝑢 ⇒𝑢𝑇𝐶
+𝑋 𝑌
+𝑣=𝜆
+4
+C. Lange et al. Spectrochimica Acta Part A: Molecular and Biomolecular Spectroscopy 334 (2025) 125861
+Fig. 2(b). It is used in two configurations; one configuration reduces devices have the same dimension. Therefore, we use the wavenumber
+the spatial dimension, and the other one keeps it. Each group starts range 300 cm−1 to 1942 cm−1 which is common to all spectrometers.
+with a block that performs a spatial reduction followed by a block To obtain the values of the spectra at these points, we used linear
+that keeps the spatial dimension. Finally, the 8 groups that contain interpolation.
+the convolutional layers are followed by a fully connected network of
+size3with dropout [43]. Within each of the convolutional groups, we 2.2. Evaluation procedure
+increase the number of channels by a constant factor𝛽 that is close to
+1. So, with the initial number of channels being 32, the final number 2.2.1. Cross-validation paradigms
+of channels remains reasonable, allowing the number of parameters in As the number of samples per spectrometer is rather low for a
+the fully connected layers to be low. machine learning problem, we use cross-validation to evaluate the per-
+Residual building block. The key component of the network architecture
+formance of a specific model type on the data set of one spectrometer.
+is the Residual Building Block in Fig. 2(b). The block adapts the
+Therefore, the samples are divided into five different folds so that the
+popular ResNet block [43] using separable convolutions [44–46] to
+spectra of one sample all belong to the very same fold. To increase the
+reduce the number of parameters, i.e. the ordinary convolutions that
+comparability between the spectrometer data sets, the samples are part
+simultaneously act across channels and spatial dimensions are split
+of the same fold across the different spectrometers, since the attribution
+into convolutions ‘‘conv-1-1-0’’ and ‘‘conv-𝑘-𝑠-𝑝’’. The layers ‘‘conv-1- of which spectrum belongs to which fold has quite some influence on
+1-0’’ are pointwise convolution that aggregate across channels, and the the overall performance. Consequently, the attribution is part of the
+‘‘conv-𝑘-𝑠-𝑝’’ layer is a depthwise convolution acting on each channel published data set, it can be found in the column ‘‘fold_idx’’ in the CSV
+individually with kernel size𝑘, stride𝑠and zero padding𝑝. Afterwards, files.
+the ‘‘conv-1-1-0’’ layer acts across channels involving only a single The results of the PLS model are obtained via 5-fold cross-validation,
+spatial point. Each convolutional layer is followed by 2 layers 𝑎(𝑏(𝑥)) i.e. a single prediction is taken from the case when this particular
+applying batch normalization followed by an activation function except observation is part of the validation set. Please note that evaluat-
+for the last one, where the activation happens after the skip connection. ing our models this way overestimates their performance and is not
+We modified the composition of the residual blockF(𝑥)and the skip representative of the performance on completely unknown data.
+connectionG(𝑥)according to [47]: As neural networks are known to benefit from bigger amounts of
+data we combine the data set from different spectrometers such that
+𝛼F(𝑥) +H(𝑥) (12)
+for the data of each spectrometer we still do the same 5-fold cross-
+The parameter𝛼is learned by the CNN for each block individually and validation, i.e. we have one fold as a validation set and the other 4
+initialized to0to speed up the training process. folds as a training set plus all spectra from all the other spectrometers.
+For the first and third convolutional layers in the block, the parame- To make a fair comparison between PLS and CNN we will evaluate the
+ters always stay the same, but for the middle convolutional layer kernel PLS model with the same data split described above. We will call this
+size 𝑘, stride 𝑠 and zero padding 𝑝 can be chosen. For the first block model that gets all the spectra as training data PLS all .
+within a group, we choose a kernel size 𝑘 = 3, stride 𝑠 = 2 and no In order to demonstrate the generalization capabilities of neural net-
+padding such that the spatial dimension of the spectrum is roughly cut works, we add another convolutional neural network. The architecture
+in half. For the second block, we keep the spatial dimension constant is the same as the one described for CNN, but we do cross-validation
+by choosing𝑘= 3,𝑠= 1and𝑝= 1. such that we train the model just on the data of all other spectrometers
+except the spectra from the device that the model will be evaluated
+Data augmentation. We use the Mixup technique for data augmenta-
+upon. We call the CNNZ model CNNZ, where ‘‘Z’’ stands for zero
+tion [48] in a slightly more flexible way by altering features and labels:
+knowledge, since the model did not see any spectra from the specific
+to combine two samples (𝑥 , 𝑦 ) and (𝑥 , 𝑦 ) we sample the weight 𝜆
+1 1 2 2 device.
+from a uniform distribution 𝑈[0, 𝜆
+max
+] to get a new sample via linear
+To increase similarity, we normalize the training data for the models
+combination:
+PLS , CNN, and CNNZ using the following procedure: We divide each
+all
+(𝜆𝑥 + (1 −𝜆)𝑥 , 𝜆𝑦 + (1 −𝜆)𝑦 ) 𝜆∼𝑈[0, 𝜆 ] (13) spectrum of a given spectrometer by the overall maximum value across
+1 2 1 2 max
+all spectra measured by this instrument, thus limiting the spectra to a
+Please note that we could pick more than two samples, but that reduces
+zero-to-one range. Subsequently, we subtract the combined mean and
+the noise even more [49]. The idea why Mixup is a good idea is
+divide by the collective standard deviation.
+that according to the Beer–Lambert law the spectrum intensity linearly
+correlates to the concentrations contained in the samples.
+2.2.2. Detection limit
+Moreover we do some augmentation on the spectra by randomly
+changing the slope or by multiplying it by a cosine-function
+The common choice for evaluating the accuracy of models on
+( (2𝜋 )) regression problems is the coefficient of determination𝑅2 which eases
+𝑥 𝑚 ↦𝑥 𝑚 ⋅ 1 +𝛾cos 𝜏 𝜔 𝑚 +𝜙 (14) comparisons as it is agnostic to different scales. To ease suitabil-
+ity judgements for a laboratory context we add the metric limit of
+In this context 𝜔 = (𝜔
+1
+,…, 𝜔
+𝑚
+)𝑇 denotes the wavenumbers of the
+detection𝐿 , which we present here according to [52].
+spectra and all parameter 𝛾, 𝜏 and 𝜙 are randomly sampled from 𝐷
+The limit of detection 𝐿 indicates the smallest prediction that
+uniform distributions. The labels of the augmented spectra remain the 𝐷
+reliably indicates the presence of the respective substance. It goes hand
+same. The idea behind this augmentation is to keep the shape of the
+in hand with the critical value𝐿 , which is the1 −𝛼th percentile for
+peaks intact compared to its surrounding baseline while the rest of 𝐶
+predictions𝑦̂when the true label is actually zero.
+the baseline that is further away from the peak changes. At least this
+phenomenon occurs as long as the periodicity 𝜏 is not too small. So, 𝑃(𝑦̂ > 𝐿 𝐶 ∣𝑦= 0) =𝛼 (15)
+the model needs to pay attention to the peak heights compared to its
+In a laboratory context one just takes predictions 𝑦̂ > 𝐿 as an
+neighborhood. 𝐶
+indication that the samples are actually containing the substrate. Con-
+CNN training. For training, we used Adam [50] and an exponentially sequently, one introduces a second threshold, the detection limit 𝐿 𝐷 ,
+decreasing learning rate [51]. Training lasts for 81 epochs. To get a that makes sure that at most𝛽 percent of the predictions𝑦̂ are below
+good model setting we did some hyperparameter tuning on the model the critical value𝐿 𝐶
+parameters. Moreover, we make sure that the spectra from the different
+𝑃(𝑦̂ < 𝐿 ∣𝑦=𝐿 ) =𝛽 (16)
+𝐶 𝐷
+5
+C. Lange et al. Spectrochimica Acta Part A: Molecular and Biomolecular Spectroscopy 334 (2025) 125861
+Fig. 2. CNN architecture: This figure describes the architecture of the CNN with part (a) taking a look at the bigger picture and part (b) focusing on the main building block.
+Assuming both significance levels 𝛼 and 𝛽 to be 5%, the errors to be acetate has the lowest 𝑅2 scores, glucose performance is a bit better,
+normally distributed and the variance of the normal distributions to be and magnesium sulfate results are the best. These results coincide with
+the same across the spectrum of concentrations, we get: the size of the peaks inFig. 1, where the peak for magnesium sulfate
+is most visually evident before glucose and sodium acetate.
+𝐿 =𝐾 𝜎+𝐾 𝜎=𝐿 +𝐾 𝜎 (17)
+𝐷 1−𝛼 1−𝛽 𝐶 1−𝛽 To compare the different model types PLS, PLS and CNN against
+all
+Here,𝐾 and𝐾 are the1 −𝛼 respectively1 −𝛽 percentile of the each other, we gather all the24𝑅2 scores per model type and get the
+1−𝛼 1−𝛽
+standard normal distribution N(0,1). However, we get the standard mean values of 0.78, 0.67 and 0.86. To check if the CNN model is sig-
+deviation𝜎from the residuals of the model predictions. Consequently, nificantly better compared to PLS, we perform a one-sided hypothesis
+we replace the percentiles of the normal distribution with percentiles test, a dependent t-test for paired samples, i.e. the null hypothesis is
+of Student’s t distribution𝑡
+1−𝛼 ,𝑛−1
+with𝑛being the number of residuals that the mean of PLS’s𝑅2 scores distribution is greater or equal to the
+used for estimating the variance. mean of the distribution for CNN. The alternative hypothesis is that
+√ the mean of the CNN distribution is significantly higher. We accept
+1 ∑
+𝐿 𝐷 = (𝑡 1−𝛼 ,𝑛−1 +𝑡 1−𝛽 ,𝑛−1 ) 𝑛− 1 (𝑦̂−𝑦)2 (18) the alternative hypothesis, as we obtain a𝑝-value of 0.0136, which is
+below our significance level of 0.05. From preliminary experiments not
+More details can be found in [52].
+shown here we can tell that when training a CNN on just the data of
+one spectrometer, its performance is similar to the PLS model.
+3. Results
+For the CNNZ that is of rather experimental sort we generally
+observe worse results compared to the other model types. Yet the
+We present the results for each model type using the datasets of
+results differ a lot from one device to the next one. For instance for
+all spectrometers. In Sections 3.1 and 3.2 we use the coefficient of Metrohm the CNNZ delivers decent results while for Anton 785 the
+determination 𝑅2 for the performance evaluation, which is the most performance is very poor.
+common metric to evaluate a regression model due to its independence We provide trajectories of the losses while training the neural
+from the scale of its labels. In Section3.3, we analyze the results using networks inFig. D.7. They suggest that the models converge to robust
+the detection limit, an indicator that is more common in laboratory minima over time.
+contexts [53].
+3.2. Spectrometer performances
+3.1. Model type performances
+Given the results of the different model performances presented
+Looking at the parity plot for the Metrohm data set in Fig. 3 we in Table 2, we look at them from the perspective of spectrometers.
+observe quite decent results for all three types of models. Looking at Please note that in the following comparisons we always excluded
+the predictions of the individual substances, we see that in the first and the 𝑅2 scores for the CNNZ model as this is rather experimental. We
+third row the predictions for glucose and magnesium sulfate are quite get a first hint of the performance of the spectrometers by looking at
+close to the orange line which represents an ideal model. For sodium the mean of the 𝑅2 scores in Table 2. However, these mean values
+acetate the range of values is smaller and the spread of the predictions are based on only a few observations, so we use the same one-sided
+around the line indicating the ideal model is noticeably greater for all hypothesis test as in Section 3.1. For example, if we compare the
+three model types. These visual impressions go hand in hand with the two data sets ‘‘Anton 532’’ and ‘‘Mettler Toledo’’ inTable 3, then the
+𝑅2 scores for the Metrohm data set inTable 2. null hypothesis is that the mean of the distribution of𝑅2 for ‘‘Mettler
+Looking at the overall performance of the model types in the dif- Toledo’’ is lower than or equal to the mean of the distribution from
+ferent data sets inTable 2, we observe the following patterns. Sodium ‘‘Anton 532’’. On the other hand, the alternative hypothesis is that the
+6
+C. Lange et al. Spectrochimica Acta Part A: Molecular and Biomolecular Spectroscopy 334 (2025) 125861
+Fig. 3. The plots display the distribution of the predictions compared to the measured concentrations. For all three types of models, the plot in the first row is glucose followed
+by sodium acetate and magnesium sulfate. These predictions were created through 5-fold cross-validation with the same split of the data set for each model type. We used the
+Metrohm data set for this comparison.
+Table 2
+Model Comparison on all Data Sets: We compare the coefficients of determination for different model types on spectra from 8 different data sets. The model types are partial
+least squares (PLS), partial least squares on all data sets (PLS ), a convolutional neural network (CNN) that is trained on all data sets as well and a convolutional neural network
+(CNNZ) that is just trained on the datasets of all other spectr
+a
+o
+ll
+meter, but has seen zero datapoints from the spectrometer data that it is evaluated upon.
+Substance Glucose Sodium acetate Magnesium sulfate Mean
+Data Set PLS PLS CNN CNNZ PLS PLS CNN CNNZ PLS PLS CNN CNNZ
+all all all
+Anton 532 0.87 0.23 0.53 −0.18 0.43 0.06 0.04 −0.09 0.87 0.12 0.96 −0.08 0.31
+Anton 785 0.64 0.37 0.79 0.77 0.64 0.06 0.79 −1.54 0.82 0.75 0.97 0.28 0.45
+Kaiser 0.91 0.87 0.91 0.37 0.85 0.86 0.91 0.81 0.88 0.9 0.93 0.8 0.83
+Metrohm 0.85 0.91 0.94 0.91 0.8 0.86 0.96 0.84 0.93 0.95 0.99 0.95 0.91
+Mettler Toledo 0.67 0.72 0.93 0.65 0.42 0.62 0.87 0.19 0.61 0.63 0.97 0.68 0.66
+Tec 5 0.85 0.85 0.91 0.62 0.78 0.83 0.88 0.6 0.82 0.89 0.98 0.84 0.82
+Timegate 0.88 0.76 0.9 0.65 0.83 0.82 0.86 0.7 0.93 0.93 0.95 0.87 0.84
+Tornado 0.87 0.76 0.94 0.67 0.82 0.76 0.93 0.64 0.73 0.69 0.87 0.69 0.78
+Mean 0.82 0.68 0.86 0.56 0.7 0.61 0.78 0.27 0.82 0.73 0.95 0.63
+Table 3
+Spectrometer comparisons: We compare the 𝑅2 scores from Table 2 except the ones from the CNNZ model. We compare
+across spectrometers using a one-sided hypothesis test. The null hypothesis posits that the mean score of the spectrometer at
+the start of each row is greater or equal to that of the spectrometer in the column and we depict the𝑝-value. P-values below
+the significance level of 0.05 are bold.
+Anton 532 Anton 785 Kaiser Metrohm Mettler toledo Tec 5 Timegate Tornado
+Anton 532 0.06 0.0 0.0 0.04 0.0 0.0 0.01
+Anton 785 0.94 0.01 0.01 0.23 0.02 0.01 0.04
+Kaiser 1.0 0.99 0.12 1.0 0.96 0.85 0.99
+Metrohm 1.0 0.99 0.88 1.0 1.0 0.95 0.99
+Mettler toledo 0.96 0.77 0.0 0.0 0.0 0.01 0.03
+Tec 5 1.0 0.98 0.04 0.0 1.0 0.35 0.93
+Timegate 1.0 0.99 0.15 0.05 0.99 0.65 0.92
+Tornado 0.99 0.96 0.01 0.01 0.97 0.07 0.08
+mean of ‘‘Mettler Toledo’’ is higher than that of ‘‘Anton 532’’. Again, we the mean for all three substances for the Kaiser and Timegate data sets
+assume a significance level of 0.05 and looking atTable 3we observe that used aluminum wells, we obtain 0.91. Doing the same for all other
+that the 𝑝-value is 0.04, thus we accept the alternative hypothesis. In datasets that used plastic wells except the Anton 532 that has problems
+this Table we depict the p-values for all combinations of spectrometer measuring sodium acetate, we also get a mean𝑅2 score of 0.91.
+data sets. The results suggest that the identification of glucose, sodium
+acetate, and magnesium sulfate in some data sets works better than in 3.3. Detection limits
+others. However, one needs to be careful to draw broad conclusions
+about the suitability of certain spectrometers because the data sets do Moreover, we show the detection limits for the three types of
+not all have the same size, measurement conditions, we just use three models and the different data sets in Table 4. We obtained the limits
+substances and the range of model types we considered is limited as according to Eq. (18) with 𝛼 = 𝛽 = 0.05 and used all the residues
+well. of the predictions whose concentration label is equal to zero for the
+Moreover, we observe that the plastic peaks that come from the respective substrate. The results are well in line with the results for the
+measurement of Raman spectra from samples in microtiter plates do coefficients of determination𝑅2inTable 2. For example, they indicate
+not impact the identifiability of the substances of interest. Therefore, that the CNN has the lowest detection limit for the three substances
+we compare the 𝑅2 scores of the best performing model, CNN, on followed by PLS and finally the PLS model. However, we also find
+all
+measurements from aluminum wells to those from plastic wells. Taking some differences. For example, Metrohm has the highest average 𝑅2
+7
+C. Lange et al. Spectrochimica Acta Part A: Molecular and Biomolecular Spectroscopy 334 (2025) 125861
+Table 4
+t
+D
+y
+e
+p
+t
+e
+e
+s
+c t
+a
+io
+re
+n
+p
+li
+a
+m
+rt
+i
+i
+t
+a l
+f o
+l
+r
+e a
+a
+s
+l
+t
+l
+s
+d
+q
+a
+u
+ta
+a r
+s
+e
+e
+s
+t s
+(
+:
+P L
+W
+S
+e
+),
+c
+p
+o
+a
+m
+rt
+p
+ia
+a
+l
+r e
+l e
+t
+a
+h
+s
+e
+t s
+d
+q
+e
+u
+te
+a
+c
+r
+t
+e
+i
+s
+o n
+o n
+l im
+al
+i
+l
+t s
+da
+𝐿
+ta
+𝐷
+s
+f
+e
+o
+t
+r
+s
+a
+(
+l
+P
+l
+L
+m
+S
+od
+)
+e
+a
+l
+n
+t
+d
+y p
+a
+e s
+c o
+o
+n
+n
+v o
+th
+lu
+e
+t i
+s
+o
+p
+n
+e
+a
+c
+l
+t r
+n
+a
+e
+o
+u
+f
+r a
+a
+l
+l l
+n e
+8
+t w
+di
+o
+f
+r
+fe
+k
+r e
+(C
+nt
+N
+d
+N
+a
+)
+t a
+th
+s
+a
+e
+t
+t s
+i
+.
+s
+T
+tr
+h
+a
+e
+i n
+m
+ed
+o d
+o
+e
+n
+l
+all data sets as well.
+all
+Substance Glucose Sodium acetate Magnesium sulfate Mean
+Data Set PLS PLS CNN CNNZ PLS PLS CNN CNNZ PLS PLS CNN CNNZ
+all all all
+Anton 532 3.42 9.56 4.49 13.51 1.29 1.86 1.68 2.49 1.78 4.02 0.25 2.73 3.92
+Anton 785 9.42 10.8 5.57 6.6 1.08 1.68 0.57 0.31 1.17 2.74 0.22 0.58 3.4
+Kaiser 2.12 2.42 1.01 8.76 0.92 0.65 0.12 0.73 0.56 0.59 0.11 0.64 1.55
+Metrohm 4.29 3.53 1.77 1.57 0.84 0.54 0.21 0.31 0.73 0.66 0.08 0.27 1.23
+Mettler Toledo 6.04 3.89 1.58 8.72 1.52 1.15 0.43 0.32 1.91 3.36 0.12 0.25 2.44
+Tec 5 4.09 4.05 1.27 8.17 0.86 0.62 0.06 0.4 1.08 1.01 0.69 0.37 1.89
+Timegate 3.47 5.49 1.57 3.43 0.94 0.91 0.2 0.86 0.62 0.74 0.19 0.64 1.59
+Tornado 3.78 5.0 1.56 0.7 0.78 0.95 0.16 0.97 1.73 1.67 0.12 0.67 1.51
+Mean 4.58 5.59 2.35 6.43 1.03 1.05 0.43 0.8 1.2 1.85 0.22 0.77
+score of 0.91 inTable 2, while we observe the lowest average detection resources. When deploying models as a PAT, the inference duration
+limit of 0.94 for Kaiser. Another difference is that the detection limits is more crucial. In our experiments, the PLS model had an inference
+for sodium acetate are lower than those for glucose. We obtained the time of around10 msper spectrum, and the CNN took1 ms. These time
+detection limit from Eq. (18), where we computed the residues for the periods are negligible when compared to the spectrometer’s exposure
+substances around zero. As the factor in front of the residuals is the durations, making both types of models adequate.
+same for both substances, the difference for the detection limit comes In terms of device comparison, most spectrometers seem to be a
+from the residues that are smaller for sodium acetate than for glucose. good choice to measure these three substrates. The Anton Paar device
+When computing the score𝑅2, we divide these residues by the sample with an emission wavelength of 532 nm seems to have difficulties in
+variance, which is larger for glucose compared to acetate, since the recording peaks for sodium acetate due to the short exposure time that
+range of labels for glucose is greater than the one for sodium acetate. reduces the signal-to-noise ratio of the Aceate peak. Looking atTable 3
+we observe better performances for devices that used longer exposure
+4. Discussion times and measured more samples. Moreover, one should keep in mind
+that the datasets differ in terms of measurement conditions and probes.
+The results indicate that using a CNN to predict concentrations In comparing the emission wavelengths of the spectrometer, both
+from Raman spectra is a better choice compared to PLS. In particular, 532 nmand785 nmappear adequate for forecasting the three substances,
+it is very interesting that the CNN improves its performance on the given that the Timegate device yields satisfactory results for532 nmand
+data set of a specific spectrometer while being mainly trained on the all spectrometer with785 nmperform well. In addition, the material of
+spectra of different spectrometers. We showcase the generalization the sample container does not play a role in identifying the substances,
+capabilities of convolutional neural networks even more with the CNNZ even though the plastic adds additional peaks to the spectrum. This
+approach. Most importantly, CNN clearly managed to learn robust behavior is expected because the models can simply learn to ignore
+features that generalize across datasets. This is a very relevant ad- these regions of the spectrum.
+vantage for biotechnological laboratories where spectra from different The detection limits’ outcomes are generally aligned with the co-
+use cases accumulate (different strains, substrates, etc.) and different efficients of determination. Nevertheless, it is observed that using
+devices are used. Instead of manual calibration of a PLS model for Raman spectra for predicting concentrations is not as precise as high-
+each device and use case requiring continuous expert intervention, we performance liquid chromatography [4]. Yet, Raman spectroscopy of-
+show that a single CNN can address these issues and even benefit from fers the benefit of enabling rapid measurement of multiple variables
+the diverse data of different spectrometers to provide a robust PAT from a single spectrum.
+method. In a broader context, these results further support the fact that
+neural networks are known to benefit from data coming from different CRediT authorship contribution statement
+domains [54]. We observe this phenomenon for data from different
+spectrometers, while the pre-processing methods for PLS struggle to Christoph Lange: Data curation, Formal analysis, Investigation,
+align different domains, as can be seen from the performance of the Methodology, Software, Visualization, Writing – original draft.Maxim
+PLS model. Borisyak: Resources, Supervision, Writing – review & editing. Mar-
+all
+Comparing our results with other biotechnological studies [2,14, tin Kögler: Resources, Supervision, Writing – review & editing. Ste-
+15], we observe that the accuracy obtained by the proposed CNN model fan Born: Resources, Supervision, Writing – review & editing. An-
+is comparable. When comparing the accuracy of the model predictions, dreas Ziehe:Resources, Supervision, Writing – review & editing.Peter
+they are best for magnesium sulfate, glucose, and worst for sodium Neubauer:Funding acquisition, Writing – review & editing.M. Nicolas
+acetate. This observation is in line with the impression from the individ- Cruz Bournazou:Funding acquisition, Writing – review & editing.
+ual spectra as inFig. 1, that is, the magnesium sulfate peak is the most
+dominant and the sodium acetate peak is rather small. Keeping in mind Declaration of competing interest
+the limit of detection, if we had used higher concentrations of sodium
+acetate, that would have increased the peaks in the Raman spectra and The authors declare that they have no known competing finan-
+improved the signal-to-noise ratio and finally lead to higher𝑅2 scores. cial interests or personal relationships that could have appeared to
+However, since sodium acetate concentrations higher than 2 g L−1 are influence the work reported in this paper.
+not common in the context of Escherichia coli fermentations [32] we
+focused on this range. Acknowledgments
+It should be mentioned that training a single PLS model is completed
+within a few seconds, while CNN training may extend to hours based CL, MB, SB, PN, and MNCB gratefully acknowledge the financial
+on hardware and data size. Our joint models took approximately 3 h support of the German Federal Ministry of Education and Research
+to train on a Nvidia® Quadro RTX ™3000 Mobile GPU. Certainly, (01DD20002A - KIWI biolab). MK work is part of the Research Council
+optimizing hyperparameters for this model requires a fair amount of of Finland Flagship Programme, Photonics Research and Innovation
+8
+C. Lange et al. Spectrochimica Acta Part A: Molecular and Biomolecular Spectroscopy 334 (2025) 125861
+(PREIN), decision number 346545. The work was also supported by the Appendix B. Spectra of pure substances
+Printed intelligence infrastructure, Germany funding, decision 358621.
+AZ gratefully acknowledges funding from the German Federal Ministry For the Kaiser spectrometer we show the spectra for the pure sub-
+of Education and Research under the grant BIFOLD25B. The authors stances of glucose, sodium acetate, and magnesium sulfate inFig. B.4
+acknowledge support by the Open Access Publication Fund of TU
+Berlin, Germany. We would like to thank everyone who gave us access Appendix C. Preprocessing steps for partial least squares
+to their spectrometers.
+Each spectrum is preprocessed using multiplicative scatter correc-
+Appendix A. Sample concentrations tion and a Savitzky–Golay filter before being applied to the partial least
+squares model. In Figs. C.5 and C.6 we display the mean spectrum
+Here we depict all concentrations of glucose, sodium acetate, and and standard deviation before and after each step given the optimal
+magnesium sulfate that we measured with an HT analyzer (Cedex hyperparameters. As the optimal hyperparameters vary by device, we
+BioHT, Roche Diagnostics GmbH, Mannheim, Germany). In particular, observe significant device-dependent differences post Savitzky–Golay
+we used the kits Glucose Bio HT, Acetate V2 Bio HT, and Magnesium V2 filter.
+Bio HT (all Roche Diagnostics GmbH, Mannheim, Germany). These kits
+determine concentrations through enzymatic assays. The manufacturer Appendix D. Loss trajectories during CNN model training
+specifies the error of these kits with 10%, 15%, and 10%, respectively.
+As we have 134 samples in total we split the concentrations into When training a neural network, batches of training data are ran-
+Table A.5,A.6andA.7. domly created to apply gradient updates to model parameters. One
+Table A.5 Table A.6
+Sample concentrations Part 1: Here we depict the concentrations of the samples used Sample concentrations Part 2: Here we depict the concentrations of the samples used
+for measuring raman spectra ing L−1. for measuring raman spectra ing L−1.
+Sample number Glucose Sodium acetate Magnesium sulfate Sample number Glucose Sodium acetate Magnesium sulfate
+0 0.55 0 0 50 0 1.37 1.36
+1 0 0 0 51 5.96 0 0.05
+2 0.57 0.21 0 52 0.29 1.11 0
+3 4.63 0.7 0.02 53 2.37 1.07 0.1
+4 3.63 1.11 0.05 54 5.94 0 0.11
+5 11.44 1.06 0 55 2.13 1 0
+6 0 1.29 0 56 4.88 0.73 3.07
+7 0 2.03 0 57 0.26 0.74 3.35
+8 0.27 1.05 0 58 5.37 0.07 0
+9 1.08 1 0 59 0.26 0 0
+10 10.16 0 1.48 60 0 1.19 0
+11 6.62 1.16 0.11 61 4.78 0 0.02
+12 11.25 0.98 0.05 62 4.91 1.04 3.3
+13 0.3 1.56 3.35 63 0 0 0
+14 0.61 0 0 64 2.16 0 0.05
+15 0.34 2.3 0 65 2.13 0 0
+16 0.5 1.33 0 66 4.73 0.67 0
+17 0.8 1.07 3.09 67 6.46 0.11 0
+18 11.7 2.14 0 68 0 2.08 0
+19 4.49 0 0.16 69 3.82 1.11 0.11
+20 0.53 0.68 0.06 70 0 0.05 0
+21 11.04 0 0 71 4.62 0.97 0.01
+22 0.25 0 0.02 72 11.73 1.07 0.05
+23 0 0.39 0.02 73 6.39 0 0.02
+24 2.17 0 0.1 74 10.59 1.11 3.48
+25 0 2.25 0 75 1.02 0.72 1.56
+26 0 0.08 0 76 0 0 0
+27 0.35 0 0 77 0 0.06 0
+28 0 0 0 78 1.09 0 0
+29 5.66 1.96 0.05 79 0.25 1.95 0
+30 0.29 0 0 80 0 0.76 0.02
+31 1.69 0.16 0 81 3.32 0 0
+32 0.54 2 0.04 82 0.26 0.04 1.49
+33 4.79 1.04 1.5 83 0 0.01 0
+34 0.53 1.98 0.09 84 5.67 2.03 0
+35 0 0 0.02 85 1.19 0 2.95
+36 0.28 0.7 1.44 86 1.08 1 0.04
+37 14.86 2.66 0.11 87 1.08 1.01 0.09
+38 5.13 0.02 1.72 88 0 1.02 0
+39 10.28 0.67 0 89 3.95 0 0.07
+40 0 0.72 1.57 90 3.62 1.12 0
+41 0.53 0 0 91 0.28 1.34 0.04
+42 5.25 0.02 3.36 92 0.26 0.67 0.01
+43 11.35 0 0.05 93 10.74 1.06 0.01
+44 2.47 1.1 0.05 94 12.31 2.21 0.05
+45 0.52 0 0.02 95 0.25 0.08 3.45
+46 1.24 2.2 0.1 96 16.73 0 0.02
+47 2.4 2.09 0 97 0 0 1.48
+48 4.55 0.11 0 98 4.57 0.7 1.54
+49 2.11 2.01 0.09 99 0.27 2.1 0
+9
+C. Lange et al. Spectrochimica Acta Part A: Molecular and Biomolecular Spectroscopy 334 (2025) 125861
+Table A.7
+Sample concentrations Part 3: Here we depict the concentrations of the samples used for
+measuring raman spectra ing L−1.
+Sample number Glucose Sodium acetate Magnesium sulfate
+100 0.52 1.03 1.33
+101 0 0.02 0.01
+102 0.54 1 0
+103 1.1 0 0.05
+104 2.23 2.11 0.05
+105 0.53 0 1.4
+106 1.25 0 0.11
+107 0.53 2.01 0
+108 0 0.77 3.95
+109 0.27 0 0
+110 0.56 1.08 3.14
+111 0.65 1.15 0
+112 3.61 2.09 0.05
+113 5.68 2.01 0.1
+114 11.86 1.09 0.11
+115 0.26 1.44 1.44
+116 0 0 3.49
+117 5.94 0 0
+118 3.4 2.04 0
+119 0 1.11 0
+120 0 1.4 3.31
+121 10.4 0.69 1.6
+122 10.71 0.74 3.48
+123 0.57 1.08 0
+124 3.94 3.05 0.11
+125 12.47 0 0.11
+126 5.94 1.06 0
+127 10.65 0 2.62
+128 10.66 1.14 1.62
+129 10.35 0 0
+130 0 0.65 0.05
+131 1.21 2.11 0.05
+132 1.08 1.99 0
+133 0.26 1.01 0
+Fig. B.4. Raman spectra pure substances: Here we plot the spectra of all pure substances that were recorded with the Kaiser spectrometer. data set with relatively high
+concentrations for all three labels. We used peak locations from the literature [36–38], but just considered those with at least some visual indications in this spectrum.
+round of updates is called an epoch. In Fig. D.7, we show how the ir/raw_data/data_as_csv?ref_type=heads. The code for processing the
+loss evolves over time. The loss represented on the𝑦-axis is the mean data, training and evaluating the models including all figures can be
+squared error of the normalized labels that have a standard deviation found at https://git.tu-berlin.de/bvt-htbd/kiwi/tf3/raman-and-nir. In
+of1. particular, we defined all the software dependencies that we used in
+this Python package. Here, we refer to a selection of the packages
+Data availability
+[55–63].
+The Raman spectra and the labels are available at https://git.tu
+-berlin.de/bvt-htbd/kiwi/tf3/raman-and-nir/-/tree/main/raman_and_n
+10
+C. Lange et al. Spectrochimica Acta Part A: Molecular and Biomolecular Spectroscopy 334 (2025) 125861
+Fig. C.5. Preprocessing steps Part 1: We present the mean and standard deviation of the spectra prior to preprocessing, following the application of the multiplicative scatter
+correction (MSC), and after the implementation of the Savitzky-Golay filter.
+11
+C. Lange et al. Spectrochimica Acta Part A: Molecular and Biomolecular Spectroscopy 334 (2025) 125861
+Fig. C.6. Preprocessing steps Part 2: We present the mean and standard deviation of the spectra prior to preprocessing, following the application of the multiplicative scatter
+correction (MSC), and after the implementation of the Savitzky–Golay filter.
+12
+C. Lange et al. Spectrochimica Acta Part A: Molecular and Biomolecular Spectroscopy 334 (2025) 125861
+Fig. D.7. Training curves for convolutional neural networks: We show both the training curves for both convolutional neural networks on the training as well as the validation
+dataset. As we do cross-validation in both cases, we average the losses across the folds.
+References [13] T.A. Webster, B.C. Hadley, W. Hilliard, C. Jaques, C. Mason, Development
+of generic raman models for a GS-KOTM CHO platform process, Biotechnol.
+[1] N.D. Lourenço, J.A. Lopes, C.F. Almeida, M.C. Sarraguça, H.M. Pinheiro, Biore- Prog. 34 (3) (2018) 730–737,http://dx.doi.org/10.1002/btpr.2633, URLhttps:
+actor monitoring with spectroscopy and chemometrics: a review, Anal. Bioanal. //onlinelibrary.wiley.com/doi/abs/10.1002/btpr.2633.
+Chem. 404 (4) (2012) 1211–1237,http://dx.doi.org/10.1007/s00216-012-6073- [14] S. Goldrick, A. Umprecht, A. Tang, R. Zakrzewski, M. Cheeks, R. Turner, A.
+9. Charles, K. Les, M. Hulley, C. Spencer, S.S. Farid, High-throughput Raman
+[2] R.C. Rowland-Jones, C. Jaques, At-line raman spectroscopy and design of spectroscopy combined with innovate data analysis workflow to enhance bio-
+experiments for robust monitoring and control of miniature bioreactor cultures, pharmaceutical process development, Processes 8 (9) (2020) 1179,http://dx.doi.
+Biotechnol. Prog. 35 (2) (2019)http://dx.doi.org/10.1002/btpr.2740, URLhttps: org/10.3390/pr8091179, URLhttps://www.mdpi.com/2227-9717/8/9/1179.
+//onlinelibrary.wiley.com/doi/10.1002/btpr.2740. [15] H. Schwarz, M.E. Mäkinen, A. Castan, V. Chotteau, Monitoring of amino
+[3] J. Liu, M. Osadchy, L. Ashton, M. Foster, C. Solomon, S. Gibson, Deep convo- acids and antibody N-glycosylation in high cell density perfusion culture
+lutional neural networks for Raman spectrum recognition: A unified solution, based on Raman spectroscopy, Biochem. Eng. J. 182 (2022) 108426, http:
+Analyst (2017)http://dx.doi.org/10.1039/C7AN01371J, 00179. //dx.doi.org/10.1016/j.bej.2022.108426, URL https://www.sciencedirect.com/
+[4] K.A. Esmonde-White, M. Cuellar, C. Uerpmann, B. Lenain, I.R. Lewis, Raman science/article/pii/S1369703X2200095X.
+[5]
+s
+t
+/
+p
+M
+u
+p
+/
+m
+.
+r
+e
+d
+M
+i
+c
+c
+x
+n
+/
+t
+.
+.
+g
+r
+d
+a
+o
+r
+o
+J
+a
+s
+t
+i
+a
+c
+i
+n
+.
+c
+n
+o
+o
+d
+l
+s
+r
+p
+e
+s
+g
+y
+s
+b
+o
+/
+/
+i
+n
+1
+P
+o
+a
+,
+0
+M
+p
+s
+.
+r
+1
+M
+C
+o
+a
+0
+5
+c
+.
+0
+e
+2
+p
+7
+s
+K
+3
+r
+s
+/
+o
+3
+ö
+i
+s
+n
+c
+7
+g
+0
+g
+e
+l
+2
+0
+e
+s
+,
+8
+2
+s
+r
+/
+A
+,
+1
+.
+a
+n
+6
+S
+n
+0
+a
+-
+.
+0
+a
+0
+l .
+l
+1
+1
+H
+y
+6
+B
+4
+t
+ö
+i
+-
+i
+8
+c
+o
+9
+r
+.
+a
+k
+a
+8
+l
+k
+n
+2
+ö
+a
+4
+t
+,
+l
+e
+-
+.
+c
+1
+T
+h
+C
+,
+.
+n
+h
+U
+o
+e
+A
+l
+R
+m
+o
+l
+L
+a
+g
+.
+-
+y
+K
+4
+h
+o
+0
+t
+f
+t
+k
+o
+9
+p
+k
+r
+s
+o
+(
+:
+3
+/
+p
+,
+/
+)
+h
+w
+L
+a
+(
+.
+r
+2
+w
+m
+0
+R
+w
+1
+a
+i
+.
+c
+7
+e
+n
+e
+p
+)
+c
+u
+p
+b
+6
+t
+o
+i
+i
+3
+.
+c
+,
+n
+7
+a
+l
+–
+l
+V
+m
+6
+i
+m
+.
+b
+4
+n
+r
+9
+a
+i
+a
+h
+,
+n
+t
+.
+i
+u
+h
+g
+o
+f
+o
+t
+n
+a
+t
+v
+p
+a
+c
+/
+-
+l
+:
+[16] J
+D
+s
+1
+e
+.
+2
+e
+l
+1
+e
+n
+G
+c
+0
+e
+t
+H
+3
+i
+r
+o
+,
+r
+e
+e
+n
+u
+h
+t
+v
+t
+z
+b
+t
+e
+e
+p
+a
+l
+n
+:
+,
+s
+/
+,
+e
+/
+L
+d
+E
+d
+. M
+.
+x
+o
+.
+.
+n
+S
+d
+C
+z
+o
+.
+y
+d
+i.
+m
+e
+B
+o
+s
+u
+r
+a
+i
+g
+g
+y
+ń
+/
+n
+d
+s
+1
+k
+e
+0
+o
+n
+a
+.
+f
+,
+s
+1
+,
+e
+0
+J
+S
+x
+.
+2
+J
+i
+p
+1
+m
+.
+e
+/
+r
+p
+J
+a
+i
+a
+l
+c
+m
+e
+n
+s
+e
+.
+s
+a
+a
+n
+e
+n
+n
+n
+t
+a
+s
+d
+,
+,
+l c
+J
+e
+A
+h
+.
+f
+e
+n
+fe
+m
+B
+a
+c
+l
+a
+.
+.
+t
+5
+r
+i
+t
+v
+C
+b
+,
+e
+0
+h
+H
+2
+e
+w
+m
+8
+.-
+a
+3
+J
+.
+y
+2
+.
+8
+,
+f
+V
+7
+o
+U
+a
+r
+(
+R
+n
+2
+d
+L
+4
+M
+a
+)
+h
+t a
+a
+t
+(
+t
+n
+2
+p
+p
+e
+0
+s
+r
+n
+1
+:
+e
+/
+,
+5
+p
+/
+)
+E
+r
+p
+o
+.
+u
+1
+R
+c
+b
+2
+e
+.
+s
+s
+0
+.
+s
+V
+a
+9
+i
+c
+n
+a
+6
+s
+n
+g
+–
+.
+spectroscopy and its future applications in microbiology, Appl. Spectrosc. Rev. 58
+org/doi/10.1021/acs.analchem.5b02832.
+(2) (2023) 132–158, http://dx.doi.org/10.1080/05704928.2021.1942894, URL [17] V. Jadeja, A.L.N. Rao, A. Srivastava, S. Singh, P. Chaturvedi, G. Bhardwaj,
+https://www.tandfonline.com/doi/full/10.1080/05704928.2021.1942894. Convolutional neural networks: A comprehensive review of architectures and
+[6] A. Kyriakides, E. Kastanos, K. Hadjigeorgiou, C. Pitris, Classification of Raman application, in: 2023 6th International Conference on Contemporary Com-
+spectra using the correlation kernel, J. Raman Spectrosc. 42 (5) (2011) 904– puting and Informatics, IC3I, IEEE, 2023, pp. 460–467, http://dx.doi.org/
+909, http://dx.doi.org/10.1002/jrs.2809, URL https://analyticalsciencejournals. 10.1109/IC3I59117.2023.10397695, URLhttps://ieeexplore.ieee.org/document/
+onlinelibrary.wiley.com/doi/10.1002/jrs.2809. 10397695/.
+[7] W. Schumacher, M. Kühnert, P. Rösch, J. Popp, Identification and classification of [18] Y. Zhao, Y. Li, B. Yang, Low-frequency desert noise intelligent suppression in seis-
+organic and inorganic components of particulate matter via Raman spectroscopy mic data based on multiscale geometric analysis convolutional neural network,
+and chemometric approaches, J. Raman Spectrosc. 42 (3) (2011) 383– IEEE Trans. Geosci. Remote. Sens. 58 (1) (2020) 650–665,http://dx.doi.org/10.
+392, http://dx.doi.org/10.1002/jrs.2702, URL https://analyticalsciencejournals. 1109/TGRS.2019.2938836, URLhttps://ieeexplore.ieee.org/document/8847454.
+onlinelibrary.wiley.com/doi/10.1002/jrs.2702. [19] Y. Qi, D. Hu, Y. Jiang, Z. Wu, M. Zheng, E.X. Chen, Y. Liang, M.A.
+[8] S. Khan, R. Ullah, A. Khan, A. Sohail, N. Wahab, M. Bilal, M. Ahmed, Sadi, K. Zhang, Y.P. Chen, Recent progresses in machine learning assisted
+Random forest-based evaluation of Raman spectroscopy for dengue fever Raman spectroscopy, Adv. Opt. Mater. 11 (14) (2023) 2203104, http://dx.
+analysis, Appl. Spectrosc. 71 (9) (2017) 2111–2117, http://dx.doi.org/ doi.org/10.1002/adom.202203104, URLhttps://onlinelibrary.wiley.com/doi/10.
+10.1177/0003702817695571, URL http://journals.sagepub.com/doi/10.1177/ 1002/adom.202203104.
+[9]
+0
+R
+A
+0
+.
+n
+0
+a
+L
+3
+l
+u
+y
+7
+o
+t
+0
+i
+,
+c
+2
+a
+J
+8
+.
+1
+3
+P
+7
+o
+6
+(
+p
+9
+3
+p
+5
+)
+,
+5
+(
+7
+T
+2
+1
+.
+0
+.
+2
+B
+2
+o
+)
+c k
+2
+li
+8
+tz
+7
+,
+– 3
+D
+0
+e
+1
+e
+,
+p
+h
+l
+t
+e
+t
+a
+p
+r
+:
+n
+/
+i
+/
+n
+d
+g
+x .
+f
+d
+o
+o
+r
+i .o
+R
+r
+a
+g
+m
+/1
+a
+0
+n
+. 3
+s
+3
+p
+9
+ec
+0
+t
+/
+r
+a
+o
+n
+sc
+a
+o
+ly
+p
+t
+y
+ic
+:
+a
+A
+3 0
+r
+3
+e
+0
+v
+0
+ie
+2
+w
+0
+,
+,
+[20] J
+c
+d
+o
+.
+x
+n
+.
+W
+d
+v
+o
+a
+o
+i
+h
+l
+.
+u
+o
+l,
+t
+r
+i
+g
+M
+o
+/
+n
+.
+1
+a
+S
+0
+l
+j
+.
+ö
+1
+n
+d
+1
+e
+a
+7
+u
+h
+7
+r
+l
+a
+/
+,
+l
+0
+K
+0
+n
+.
+0
+e
+R
+t
+3
+w
+a
+7
+m
+o
+0
+r
+2
+s
+k
+e
+8
+s
+r
+1
+,
+,
+9
+A
+S
+8
+i
+p
+n
+8
+p
+g
+8
+l
+l
+9
+.
+e
+4
+-
+S
+s
+9
+p
+t
+,
+e
+e
+p
+c
+U
+t
+p
+r
+R
+o
+r
+L
+s
+e
+c
+p
+h
+.
+r
+t
+o
+7
+t
+c
+p
+4
+e
+: /
+s
+(
+s
+/
+4
+i
+j
+)
+n
+o
+g
+u
+( 2
+r
+o
+n
+0
+f
+a
+2
+R
+l
+0
+s
+a
+)
+.s
+m
+a
+4
+g
+a
+2
+n
+e
+7
+p
+–
+s
+u
+4
+p
+b
+3
+e
+.
+c
+8
+c
+t
+o
+,
+r
+m
+a
+h t
+/
+u
+t
+d
+p
+si
+o
+:
+n
+/
+i
+g
+/
+/
+URLhttps://www.mdpi.com/2673-4532/3/3/20.
+[10] R
+d
+I
+U
+n
+a
+.
+R
+s
+t
+t
+L
+a
+G
+r u
+a
+h
+p
+m
+u
+t
+r
+t
+t
+.
+o
+p
+a
+c
+:
+m
+2
+/
+e
+/
+s
+,
+s
+w
+(
+i
+1
+S
+n
+w
+)
+.
+g
+w
+V
+(
+.
+a
+2
+e
+a
+p
+0
+p
+n
+p
+1
+j
+g
+t
+r
+5
+e
+a
+o
+)
+c
+,
+a
+h
+c
+8
+F
+n
+h
+,
+.
+i
+e
+q
+s
+h
+A
+u
+t
+e
+r
+f
+t
+o
+i
+s
+p
+e
+a
+r
+:
+s
+n
+/
+e
+/
+d
+R
+,
+d
+i
+a
+n
+x
+S
+m
+s
+.
+.
+d
+t
+a
+r
+o
+n
+U
+u
+i
+m
+.
+m
+o
+a
+e
+r
+a
+n
+g
+n
+p
+d
+/
+t
+a
+a
+1
+t
+t
+i
+0
+h
+n
+io
+.
+y
+f
+1
+n
+r
+,
+1
+a
+.c
+4
+r
+R
+o
+e
+0
+e
+d
+m
+/
+v
+e
+i
+/
+s
+e
+p
+c
+p
+w
+j
+o
+t
+e
+i
+n
+c
+/
+t
+t
+o
+s
+e
+r
+4
+f
+o
+n
+0
+s
+t
+m
+4
+/
+c
+2
+o
+8
+u
+p
+/
+5
+l
+1
+y
+t
+-
+i
+0
+/
+,
+d
+8
+1
+i
+E
+m
+.
+5
+P
+-
+0
+e
+0
+J
+0
+n
+0
+3
+s
+T
+1
+i
+1
+o
+e
+8
+4
+n
+c
+-
+.
+h
+6
+al
+.
+,
+[21]
+1
+W
+n
+tr
+0
+e
+o
+.
+u
+.
+B
+s
+1
+r
+c
+.
+1
+a
+.
+l
+7
+S
+5
+7
+o
+1
+/
+n
+h
+0
+e
+n
+(
+0
+t
+,
+3
+w
+0
+)
+S
+3
+o
+.
+7
+r
+Y
+(
+k
+2
+0
+.
+0
+2
+L
+2
+8
+f
+e
+o
+0
+1
+e
+r
+)
+9
+,
+8
+4
+S
+b
+8
+1
+.
+i
+8
+o
+4
+9
+K
+l
+–
+4
+o
+4
+i
+g
+9
+m
+2
+i
+.
+1
+c
+,
+a
+,
+S
+l
+h
+in
+t
+R
+t
+g
+p
+a
+le
+:
+m
+/
+-l
+/
+a
+a
+d
+n
+y
+x
+e
+.
+r
+d
+s
+o
+p
+m
+i
+e
+.o
+c
+u
+t
+r
+l
+r
+t
+g
+a
+i
+/
+p
+l
+1
+le
+0
+a
+-
+.
+k
+1
+n
+e
+0
+a
+r
+l
+0
+n
+y
+2
+e
+s
+/
+i
+l
+s
+-
+j
+b
+r
+,
+s
+a
+.
+s
+5
+J
+e
+8
+.
+d
+0 4
+R
+c
+,
+a
+o
+m
+n
+U
+v
+a
+R
+o
+n
+L
+l ut
+h
+S
+io
+t
+p
+t
+n
+e
+p
+a
+c
+s
+-
+l
+:
+[11] R. Hara, W. Kobayashi, H. Yamanaka, K. Murayama, S. Shimoda, Y. Ozaki,
+//analyticalsciencejournals.onlinelibrary.wiley.com/doi/10.1002/jrs.5804.
+Validation of the cell culture monitoring using a Raman spectroscopy calibration [22] M. Wu, S. Wang, S. Pan, A.C. Terentis, J. Strasswimmer, X. Zhu, Deep learning
+model developed with artificially mixed samples and investigation of model data augmentation for Raman spectroscopy cancer tissue classification, Sci.
+learning methods using initial batch data, Anal. Bioanal. Chem. 416 (2) (2024) Rep. 11 (1) (2021) 23842,http://dx.doi.org/10.1038/s41598-021-02687-0, URL
+569–581,http://dx.doi.org/10.1007/s00216-023-05065-z. https://www.nature.com/articles/s41598-021-02687-0.
+[12] R. Hara, W. Kobayashi, H. Yamanaka, K. Murayama, S. Shimoda, Y. Ozaki, [23] S. Hu, H. Li, C. Chen, C. Chen, D. Zhao, B. Dong, X. Lv, K. Zhang, Y. Xie, Raman
+Development of Raman calibration model without culture data for in-line analysis spectroscopy combined with machine learning algorithms to detect adulterated
+of metabolites in cell culture media, Appl. Spectrosc. 77 (5) (2023) 521–533, suichang native honey, Sci. Rep. 12 (1) (2022) 3456, http://dx.doi.org/10.
+http://dx.doi.org/10.1177/00037028231160197, URLhttps://opg.optica.org/as/ 1038/s41598-022-07222-3, URL https://www.nature.com/articles/s41598-022-
+abstract.cfm?uri=as-77-5-521. 07222-3.
+13
+C. Lange et al. Spectrochimica Acta Part A: Molecular and Biomolecular Spectroscopy 334 (2025) 125861
+[24] J. Dong, M. Hong, Y. Xu, X. Zheng, A practical convolutional neural network [42] T. Hastie, R. Tibshirani, J. Friedman, Linear methods for regression, in: T. Hastie,
+model for discriminating Raman spectra of human and animal blood, J. Chemom. R. Tibshirani, J. Friedman (Eds.), The Elements of Statistical Learning: Data
+33 (11) (2019) e3184, http://dx.doi.org/10.1002/cem.3184, URL https:// Mining, Inference, and Prediction, Springer, 2009, pp. 43–99,http://dx.doi.org/
+analyticalsciencejournals.onlinelibrary.wiley.com/doi/10.1002/cem.3184. 10.1007/978-0-387-84858-7_3, 00138.
+[25] M.K. Maruthamuthu, A.H. Raffiee, D.M. De Oliveira, A.M. Ardekani, M.S. Verma, [43] K. He, X. Zhang, S. Ren, J. Sun, Deep residual learning for image recog-
+Raman spectra-based deep learning: A tool to identify microbial contamination, nition, 2015, http://dx.doi.org/10.48550/arXiv.1512.03385, arXiv:1512.03385
+Microbiol. 9 (11) (2020) e1122, http://dx.doi.org/10.1002/mbo3.1122, URL [cs]. URLhttp://arxiv.org/abs/1512.03385.
+https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7658449/. 00009. [44] F. Chollet, Xception: Deep learning with depthwise separable convolutions, 2017,
+[26] S. Yu, H. Li, X. Li, Y.V. Fu, F. Liu, Classification of pathogens by Raman http://dx.doi.org/10.48550/arXiv.1610.02357,arXiv:1610.02357[cs]. URLhttp:
+spectroscopy combined with generative adversarial networks, Sci. Total Environ. //arxiv.org/abs/1610.02357.
+726 (2020) 138477, http://dx.doi.org/10.1016/j.scitotenv.2020.138477, URL [45] C. Szegedy, W. Liu, Y. Jia, P. Sermanet, S. Reed, D. Anguelov, D. Erhan, V.
+https://linkinghub.elsevier.com/retrieve/pii/S0048969720319902. Vanhoucke, A. Rabinovich, Going deeper with convolutions, 2014, http://dx.
+[27] W.J. Thrift, R. Ragan, Quantification of analyte concentration in the single doi.org/10.48550/arXiv.1409.4842,arXiv:1409.4842[cs]. URLhttp://arxiv.org/
+molecule regime using convolutional neural networks, Anal. Chem. 91 (21) abs/1409.4842.
+(2019) 13337–13342, http://dx.doi.org/10.1021/acs.analchem.9b03599, URL [46] C. Szegedy, S. Ioffe, V. Vanhoucke, A.A. Alemi, Inception-v4, inception-ResNet
+https://pubs.acs.org/doi/10.1021/acs.analchem.9b03599. and the impact of residual connections on learning, in: Proceedings of the Thirty-
+[28] A. Khan, A. Sohail, U. Zahoora, A.S. Qureshi, A survey of the recent architec- First AAAI Conference on Artificial Intelligence, AAAI ’17, AAAI Press, 2017, pp.
+tures of deep convolutional neural networks, Artif. Intell. Rev. 53 (8) (2020) 4278–4284.
+5455–5516,http://dx.doi.org/10.1007/s10462-020-09825-6. [47] T. Bachlechner, B.P. Majumder, H.H. Mao, G.W. Cottrell, J. McAuley, ReZero is
+[29] V.S. Bitra, S. Verma, B.T. Rao, Machine learning and convolution neural network all you need: Fast convergence at large depth, 2020,http://dx.doi.org/10.48550/
+based trace identification of pesticides and dye mixtures from Raman spectra, arXiv.2003.04887, arXiv:2003.04887 [cs, stat]. URL http://arxiv.org/abs/2003.
+in: Proceedings of the 6th Joint International Conference on Data Science & 04887.
+Management of Data (10th ACM IKDD CODS and 28th COMAD), in: CODS- [48] S. Yun, D. Han, S.J. Oh, S. Chun, J. Choe, Y. Yoo, CutMix: Regularization
+COMAD ’23, Association for Computing Machinery, 2023, pp. 280–281, http: strategy to train strong classifiers with localizable features, 2019,http://dx.doi.
+//dx.doi.org/10.1145/3570991.3571007. org/10.48550/arXiv.1905.04899, arXiv:1905.04899 [cs]. URL http://arxiv.org/
+[30] C.-S. Ho, N. Jean, C.A. Hogan, L. Blackmon, S.S. Jeffrey, M. Holodniy, N. Banaei, abs/1905.04899.
+A.A.E. Saleh, S. Ermon, J. Dionne, Rapid identification of pathogenic bacteria [49] C. Lange, I. Thiele, L. Santolin, S.L. Riedel, M. Borisyak, P. Neubauer, M.N.C.
+using Raman spectroscopy and deep learning, Nat. Commun. 10 (1) (2019) 4927, Bournazou, Data augmentation scheme for Raman spectra with highly correlated
+http://dx.doi.org/10.1038/s41467-019-12898-9. annotations, 2024, http://dx.doi.org/10.48550/arXiv.2402.00851, arXiv:2402.
+[31]
+c
+H
+H
+o
+.
+.
+n
+L
+C
+v
+a
+o
+h
+i
+l
+e
+,
+u
+n
+X
+t
+,
+i
+.
+o
+C
+n
+L
+a
+.
+v
+l
+,
+C
+n
+S
+h
+e
+e
+e
+u
+r
+n
+u
+r
+,
+a
+m
+l
+H
+n
+R
+.
+e
+a
+t
+W
+m
+w
+a
+a
+o
+n
+n
+r
+g
+k
+s
+,
+p
+d
+C
+e
+ia
+c
+.
+g
+tr
+C
+n
+o
+o
+h
+s
+s
+e
+c
+i
+n
+o
+n
+,
+p
+g
+y
+Z
+t
+.
+h
+c o
+y
+G
+r
+m
+o
+u
+b
+i
+o
+d
+i
+,
+n
+d
+e
+D
+y
+d
+.
+s f
+w
+T
+u
+o
+i
+n
+t
+n
+c
+h
+g
+t i
+,
+a
+o n
+H
+m
+,
+.
+u
+O
+l
+L
+p
+t
+i
+i
+t
+,
+-
+i
+f
+k
+e
+H
+a
+2
+.
+t u
+1
+L
+r
+6
+i
+e
+,
+(
+f
+2
+R
+u
+0
+.
+s
+2
+io
+S
+0
+i
+n
+)
+,
+[50]
+0
+d
+D
+0
+x
+.P
+.
+8
+d
+.
+5
+o
+1
+K
+i.
+i
+o
+n
+[
+r
+c
+g
+g
+s
+m
+/
+,
+1
+a
+q
+0
+,
+- b
+.
+J
+4
+i
+.
+o
+8
+]
+5
+B
+.
+5
+a
+U
+0
+,
+/
+R
+A
+a
+L
+d
+rX
+a
+h
+m
+i
+t
+v
+t
+:
+.
+p
+1
+A
+:
+4
+/
+1
+/
+m
+a
+2
+r
+.
+e
+6
+x
+t
+i
+9
+h
+v
+8
+o
+.o
+0
+d
+r
+,
+g
+fo
+a
+/
+r
+r
+a
+X
+b
+s
+i
+s
+t
+v
+/
+o
+:
+2
+c
+1
+4
+h
+4
+0
+a
+1
+2
+s
+2
+t
+.
+.
+i
+0
+6
+c
+0
+9
+o
+8
+8
+p
+5
+0
+t
+1
+i
+.
+m
+[c
+i
+s
+z
+]
+a
+.
+ti
+U
+on
+R
+,
+L
+2
+h
+0
+t
+1
+t
+7
+p
+,
+:/
+h
+/a
+tt
+r
+p
+x
+:
+i
+/
+v
+/
+.
+164961,http://dx.doi.org/10.1016/j.ijleo.2020.164961, URLhttps://linkinghub. org/abs/1412.6980.
+elsevier.com/retrieve/pii/S003040262030797X. [51] Z. Li, S. Arora, An exponential learning rate schedule for deep learning, 2019,
+[32] L. Kaspersetz, S. Waldburger, M.-T. Schermeyer, S.L. Riedel, S. Groß, P.
+http://dx.doi.org/10.48550/arXiv.1910.07454,arXiv:1910.07454[cs, stat]. URL
+N
+8
+h
+Fr
+1
+i
+e
+g
+o
+2
+u
+h
+n
+1
+b
+-
+t
+4
+t
+a
+.
+h
+0
+u
+r
+,
+C
+e
+o
+r
+h
+u
+U
+,
+e
+g
+R
+M
+m
+h
+L
+.
+p
+.
+-
+u
+N
+h
+E
+t
+.
+t t
+n
+C
+p
+f
+g
+a
+s
+r
+.
+c
+:
+u
+/
+i
+z
+l
+/
+4
+i
+-
+t
+w
+B
+y
+o
+w
+( 2
+u
+v
+w
+0
+r
+i
+n
+a
+.
+2
+f
+a
+2
+r
+z
+t
+o
+)
+h
+o
+n
+e
+u
+t
+8
+i
+,
+e
+1
+i
+A
+n
+r
+2
+s
+t
+u
+1
+i
+e
+n
+t
+4
+g
+o
+.
+0
+r
+o
+m
+a
+,
+r
+t
+g
+a
+i
+h
+t
+/
+o
+e
+a
+t
+n
+d
+t
+r
+p
+t
+o
+i
+b
+:
+c
+/
+f
+i
+l
+/
+o
+e
+d
+a
+p
+s
+x
+/
+ro
+.
+m
+1
+d
+c
+0
+o
+o
+e
+.
+i
+b
+3
+s
+.
+s
+o
+i
+3
+l
+r
+e
+8
+f
+g
+e
+9
+/
+e
+r
+/
+1
+d
+o
+f
+0
+b
+c
+b
+e
+.
+a
+o
+3
+n
+c
+t
+3
+i
+k
+g
+c
+8
+. 2
+o
+9
+l
+0
+p
+/
+a
+2
+e
+f
+b
+c
+r
+2
+e
+a
+.
+a
+n
+8
+t
+s
+i
+g
+1
+o
+s
+.
+2
+i
+n
+2
+s
+1
+t
+0
+i
+a
+4
+n
+2
+n
+0
+2
+t
+a
+/
+,
+.
+[52]
+h
+E
+h
+ga
+t
+t
+.
+t
+t
+s
+p
+p
+B
+:
+:
+c
+/
+/
+e
+h
+/
+/
+r
+r
+n
+a
+d
+o
+r
+a
+x
+m
+x
+l
+.d
+,
+i
+a
+v
+o
+t
+.
+L
+i
+o
+o
+.
+i
+o
+g
+r
+m
+g
+r
+r
+a
+g
+/
+it
+a
+p
+/
+b
+1
+h
+o
+s
+0
+y
+/
+f
+.
+,
+5
+1
+i
+7
+9
+d
+n
+7
+1
+e
+:
+t
+2
+0
+e
+A
+/
+.
+c
+0
+5
+d
+t
+7
+i
+7
+v
+o
+4
+3
+a
+n
+5
+n
+4
+4
+1
+c
+.
+a
+e
+,
+n
+s
+d
+U
+i n
+R
+l
+L
+i
+G
+m
+a
+h
+i
+s
+t
+t t
+C
+p
+o
+s
+h
+f
+:
+r
+/
+o
+/
+q
+m
+w
+u
+a
+a
+w
+t
+n
+o
+w
+t
+g
+i
+.
+f
+i
+r
+i
+n
+a
+c
+t
+p
+a
+e
+t
+h
+c
+i
+y
+o
+h
+,
+n
+o p
+In
+e
+d
+t
+n
+e
+e
+.
+t
+c
+c
+e
+h
+o
+r
+O
+m
+m
+p
+i
+/
+n
+e
+c
+n
+a
+h
+t
+,
+a
+io
+p
+2
+n
+t
+0
+e
+1
+rs
+i
+4
+n
+/
+,
+46058.
+[33]
+S
+f
+M
+1
+f
+e
+u
+u
+0
+d
+.
+l
+l
+.
+l
+-
+f
+1
+.
+G
+b
+a
+1
+t
+o
+a
+8
+e
+t
+t
+6
+c
+s
+l
+m
+h
+/
+im
+s
+y
+p
+1
+i
+,
+r
+2
+t
+o
+a
+F
+9
+t
+c
+.
+3
+i
+e
+o
+S
+4
+s
+n
+t
+s
+-
+r
+e
+0
+o
+i
+s
+2
+n
+b
+,
+3
+c
+l
+M
+r
+,
+-
+e
+0
+F
+i
+a
+2
+c
+.
+s
+r
+2
+e
+W
+o
+4
+s
+b
+8
+e
+s
+.
+-
+i
+p
+ß
+2
+C
+e
+,
+,
+e
+c
+l
+U
+i
+P
+l
+f
+.
+i
+R
+F
+c
+G
+L
+a
+p
+c
+r
+h
+l
+u
+t
+a
+o
+t
+b
+s
+t
+r
+p
+e
+m
+ie
+r
+s
+i
+,
+:
+s
+d
+/
+B
+/
+2
+D
+.
+m
+2
+N
+K
+i
+(
+c
+r
+A
+1
+r
+a
+)
+o
+u
+y
+b
+(
+s
+i
+2
+e
+i
+,
+a
+l
+0
+J
+d
+l
+2
+c
+.
+e
+3
+a
+M
+l
+n
+)
+l f
+a
+d
+2
+a
+i
+c
+4
+r
+p
+h
+t
+2
+r
+o
+o
+o
+,
+r
+f
+d
+i
+h
+e
+e
+u
+r
+t
+s
+t
+c
+,
+.
+p
+b
+t
+J
+i
+:
+i
+v
+/
+.
+o
+/
+i
+Z
+m
+t
+d
+y
+a
+x
+e
+n
+i
+.
+d
+n
+d
+g
+c
+h
+o
+e
+E
+e
+i
+n
+.
+.
+l
+o
+t
+l
+c
+r
+i
+r
+n
+o
+a
+g
+l
+i
+l
+/
+i
+.
+,
+[
+[
+5
+5
+3
+4
+]
+]
+q
+D
+K
+f
+C
+o
+u
+o
+.
+.
+r
+A
+a
+m
+Z
+d
+n
+.
+h
+p
+o
+t
+o
+i
+u
+A
+m
+t
+u
+t
+a
+r
+e
+a
+,
+t
+m
+r
+i
+i
+Y
+o
+n
+b
+n
+.
+V
+r
+g
+,
+u
+Y
+i
+e
+s
+s
+C
+a
+n
+i
+t
+o
+n
+l
+e
+e
+i
+n
+r
+g
+r
+n
+a
+,
+,
+.
+l
+–
+i
+T
+B
+T
+z
+.
+i
+a
+.
+E
+o
+t
+H
+C
+c
+i
+P
+o
+h
+o
+C
+r
+n
+s
+e
+V
+y
+p
+,
+m
+,
+e
+i n
+.
+2
+d
+L
+:
+0
+a
+R
+i
+A
+l
+2
+m
+e
+e
+0
+.
+v
+s
+i
+,
+,
+.
+V
+t
+T
+e
+2
+S
+o
+d
+9
+.
+p
+f
+a
+r
+X
+S
+l
+i
+d
+n
+i
+b
+u
+a
+i
+g
+l
+p
+n
+,
+a
+e
+p
+g
+H
+n
+r
+l
+,
+k
+.
+1
+I
+,
+L
+B
+n
+e
+i
+t
+(
+l
+a
+s
+e
+i
+2
+c
+r
+m
+r
+0
+h
+n
+n
+0
+i
+i
+o
+a
+t
+n
+8
+f
+t
+g
+,
+i
+)
+o
+o
+T
+t
+n
+S
+f
+.
+o
+4
+a
+B
+l
+9
+d
+g
+r
+–
+e
+e
+o
+P
+5
+t
+n
+x
+e
+u
+2
+e
+,
+c
+b
+.
+r
+J
+t
+l
+a
+i
+.
+i
+o
+-
+t
+s
+M
+e
+n
+h i
+.
+n
+n
+a
+F
+o
+g
+n
+r
+v
+,
+a
+d
+e
+h
+2
+l
+m
+0
+d
+li
+2
+o
+m
+(
+0
+m
+E
+,
+i t
+d
+a
+p
+s
+in
+.
+o
+p
+)
+s
+f
+,
+.
+com/articles/10.1186/s12934-023-02248-2.
+[34] R
+A
+s
+tr
+p
+.
+l
+o
+e
+le
+s
+L
+c
+c
+n
+t
+i
+.
+r
+,
+,
+a
+4
+D
+E
+5
+o
+.
+f
+f
+f
+V
+e
+(9
+c
+h
+e
+t
+)
+u
+r
+s
+r
+m
+e
+(2
+a
+o
+a
+u
+0
+f
+n
+l
+1
+t
+l
+4
+f
+,
+a
+r
+)
+s
+e
+A
+e
+s
+7
+.
+r
+h
+7
+P
+3
+c
+e
+a
+–
+o
+x
+y
+7
+c
+l
+n
+o
+i
+8
+e
+t
+n
+0
+a
+,
+,
+t
+,
+i
+C
+p
+o
+h
+.
+a
+n
+L
+t
+n
+t
+.
+p
+c
+w
+H
+:
+r
+/
+e
+a
+i
+/
+a
+t
+v
+d
+c
+s
+e
+h
+,
+x
+l
+.
+c
+e
+d
+a
+o
+n
+n
+o
+c
+g
+d
+i
+k
+t
+. o
+h
+,
+p
+r
+S
+g
+r
+a
+.
+o
+/
+P
+n
+1
+s
+.
+t
+d
+0
+a
+P
+.
+t
+1
+e
+o
+o
+0
+v
+p
+0
+t
+o
+t
+i
+2
+i
+s
+s
+c
+s
+k
+/
+a
+u
+j
+i
+r
+l
+,
+e
+s
+s
+.
+E
+m
+,
+4
+.
+5
+W
+J
+o
+4
+.
+d
+.
+0
+e
+R
+,
+M
+a
+U
+o
+a
+m
+n
+r
+R
+a
+t i
+L
+n
+n
+R
+,
+h
+a
+S
+H
+m
+t
+p
+t
+e
+p
+.
+a
+C
+c
+s
+n
+-
+:
+.
+[55]
+C
+C
+5
+H
+P
+6
+e
+o
+.
+o
+R
+t
+1
+u
+y
+e
+.
+–
+r
+e
+r
+n
+5
+s
+r
+H
+o
+a
+,
+7
+a
+p
+n
+8
+M
+r
+e
+,
+,
+r
+a
+.
+P
+i
+h
+H
+u
+s
+.
+t
+,
+,
+.
+t
+G
+p
+K
+E
+V
+:
+é
+/
+.
+.
+a
+r
+J
+/
+a
+n
+.
+W
+d
+r d
+x
+M
+K
+i
+.
+-
+e
+d
+M
+e
+i
+s
+l
+o
+r
+e
+l
+a
+k
+i
+m
+r
+.
+r
+w
+,
+o
+c
+a
+r
+i
+h
+J
+n
+j
+g
+a
+.
+k
+,
+/
+n
+,
+1
+T
+S
+t
+0
+M
+,
+a
+. J
+.
+y
+K
+1
+.
+.
+l
+0
+.
+o
+B
+V
+0
+r
+S
+r
+,
+7
+a
+h
+e
+n
+/
+e
+t
+S
+t
+9
+p
+.
+,
+7
+p
+D
+B
+A
+8
+a
+e
+e
+-
+r
+.
+r
+r
+3
+d
+g
+H
+-
+,
+W
+,
+0
+T
+a
+3
+a
+N
+l
+.
+d
+0
+l
+.
+t
+R
+a
+-
+J
+,
+5
+n
+e
+.
+8
+d
+e
+R
+S
+5
+,
+d
+.
+m
+1
+y
+J
+G
+7
+,
+i
+.
+t
+F
+-
+o
+W
+h
+4
+.
+m
+,
+_
+.
+D
+3
+m
+R
+W
+3
+e
+.
+e
+.
+l
+e
+r
+K
+c
+s
+R
+k
+,
+e
+í
+e
+o
+r
+P
+n
+s
+,
+s
+.
+,
+e
+M
+r
+V
+M
+,
+.
+i
+.
+r
+H
+W
+ta
+P
+.
+i
+n
+i
+A
+e
+c
+e
+b
+b
+u
+n
+e
+b
+s
+,
+,
+,
+a s
+D
+P
+S
+i,
+.
+.
+.
+[35] M
+/
+T
+/
+e
+.
+a
+c
+n
+h
+K
+a
+n
+ö
+l
+o
+g
+y
+l
+l
+t
+.
+e
+i c
+r
+3
+a
+,
+2
+ls
+B
+c
+(
+.
+1
+i e
+)
+H
+n
+e
+(
+c
+2
+i
+e
+l
+0
+j
+a
+o
+2
+l
+u
+a
+0
+,
+r
+)
+n
+T
+a
+0
+i
+l
+1
+m
+s.
+2
+o
+e
+0
+n
+-
+0
+g
+li
+2
+a
+n
+t
+,
+e
+e
+h
+l
+d
+i
+t
+b
+t
+R
+r
+p
+a
+:
+a
+/
+r
+m
+y
+/d
+.
+a
+w
+x
+n
+i
+. d
+le
+s
+o
+p
+y
+i
+e
+.
+.
+c
+o
+c
+o
+r
+tr
+m
+g
+o
+/
+/
+s
+1
+c
+d
+0
+o
+o
+.
+p
+1
+i/
+y
+0
+1
+8
+0
+–
+8
+. 1
+/
+a
+1
+0
+3
+0
+r
+6
+2
+ev
+1
+/
+i
+j
+-
+e
+r
+6
+s
+w
+5
+.4
+,
+0
+5
+1
+M
+4
+/
+0
+a
+e
+.
+b
+as
+b
+.
+0 4
+S
+4
+ci
+.
+.
+C
+(2
+.
+0
+G
+2
+o
+0
+h
+)
+lk
+3
+e
+5
+,
+7
+T
+–
+.
+3
+E
+6
+.
+2
+O
+,
+l
+h
+ip
+t
+h
+tp
+a
+:
+n
+/
+t
+/
+,
+d
+A
+x.
+r
+d
+r
+o
+a
+i
+y
+. o
+p
+rg
+ro
+/
+g
+1
+r
+0
+a
+.
+m
+10
+m
+3
+i
+8
+n
+/
+g
+s 4
+w
+15
+it
+8
+h
+6 -
+N
+0
+u
+2
+m
+0-
+P
+2
+y
+6
+,
+4
+N
+9
+a
+-2
+tu
+,
+re
+U R
+5
+L
+85
+h
+(
+t
+7
+tp
+8
+s
+2
+:/
+5
+/
+)
+[36]
+p
+(
+R
+1
+o
+.L
+)
+t a
+.
+(
+s
+2
+s
+F
+i
+0
+r
+u
+o
+0
+m
+s
+0
+t
+)
+,
+an
+1
+J
+d
+.
+3
+T
+1
+.
+m
+–1
+K
+a
+4
+g
+lo
+1
+n
+p
+,
+e
+r
+s
+h
+o
+iu
+g
+tt
+m
+g
+p
+e
+: /
+,
+a
+/
+t
+R
+d x
+l
+a
+i
+.
+m
+q
+d
+u
+o
+a
+i
+i
+n
+d
+.o r
+n
+s
+g
+p
+i
+/
+t
+e
+r
+1
+c
+o
+0
+t
+g
+r
+.
+e
+o
+1
+n
+s
+0
+c
+1
+o
+t
+6
+e
+p
+/
+m
+y
+S
+p
+0
+o
+e
+0
+f
+r
+2
+a
+2
+t
+t
+u
+-
+h
+2
+r
+e
+e
+8
+,
+6
+a
+0
+J
+c
+(
+.
+e
+0
+t
+M
+0
+at
+)
+o
+e
+0
+l
+s
+0
+.
+4
+S
+o
+6
+t
+f
+0
+r u
+-
+s
+9
+c
+o
+t
+,
+d
+.
+i
+U
+u
+5
+R
+m
+26
+L
+,
+[56] A
+w
+Z
+M
+.
+.
+w
+.
+L
+P
+w
+R
+i
+a
+n
+a
+.
+s
+n
+,
+i
+z
+s
+a
+k
+o
+N
+t
+e
+n
+u
+.
+,
+,
+r e
+G
+A
+S
+.c
+i
+.
+.
+m
+o
+G
+T
+m
+e
+e
+r
+l
+/
+s
+o
+j
+a
+h
+a
+s
+r
+n
+e
+s
+t
+,
+i
+i
+i
+n
+,
+c
+F
+,
+l
+S
+e
+.
+.
+L
+s /
+M
+.
+C
+s
+h
+A
+4
+a
+i
+s
+1
+n
+l
+s
+a
+5
+t
+a
+i
+m
+8
+,
+g
+6
+a
+k
+A
+-
+,
+u
+0
+.
+r
+A
+2
+t
+L
+h
+0
+.
+e
+y
+-
+D
+r
+2
+,
+e
+6
+e
+r
+B
+s
+4
+,
+.
+m
+9
+J
+S
+-
+a
+.
+2
+t
+i
+e
+s
+.
+B
+o
+in
+r
+n
+a
+e
+,
+d
+r,
+A
+b u
+L
+.
+r
+.
+K
+y
+F
+,
+ö
+a
+p
+G
+n
+f
+g
+,
+.
+,
+E
+C
+J
+.
+h
+.
+a
+Y
+B
+n
+a
+a
+a
+n
+i
+n
+g
+,
+,
+,
+S
+T
+.
+Z
+.
+.
+C h
+K
+D
+i
+i
+e
+n
+l
+V
+l
+t
+e
+a
+i
+e
+t
+l
+n
+o
+a
+,
+,
+,
+[37]
+h
+V
+S.
+t
+.
+A
+t
+V
+p
+.
+.
+s :/
+P
+T
+/
+o
+u
+w
+r
+c
+t
+w
+h
+n
+i
+o
+w
+n
+v
+,
+. s
+,
+c
+A
+i
+N
+e
+.N
+n
+.A
+c
+.
+e
+.
+d
+B
+i
+a
+T
+r
+s
+e
+r
+h
+c
+u
+k
+t
+n
+.
+a
+c
+in
+t
+o
+o
+a
+m
+v
+,
+,
+/ s
+D
+c
+E
+i
+.
+.
+e
+R
+A
+n
+.
+.
+c e
+M
+G
+/a
+e
+il
+r
+n
+l
+t
+e
+i
+i
+n
+c
+r
+a
+,
+l e
+,
+/
+S
+p
+V
+.
+i i
+.I
+/
+.
+C
+S
+h
+0
+K
+o
+0
+o
+,
+2
+c
+2
+h
+H
+2
+u
+8
+.
+b
+6
+e
+0
+O
+y
+0
+,
+h
+0
+,
+0
+V
+0
+.
+B
+V
+4
+.
+.
+6 0
+S
+L
+9
+h
+y
+.
+i
+c
+m
+ha
+,
+go
+M
+v,
+.
+h
+P
+t
+y
+t
+T
+p
+o
+:/
+r
+/
+c
+d
+h
+x
+:
+.d
+A
+o
+n
+i .o
+i
+r
+m
+g
+p
+/1
+er
+0
+a
+.4
+ti
+8
+v
+5
+e
+5
+s
+0
+t
+/
+y
+a
+l
+r
+e
+X
+,
+iv
+h
+.
+i
+1
+g
+9
+h
+1
+-p
+2
+e
+.0
+rf
+1
+o
+7
+rm
+03
+a
+,
+n
+a
+c
+r
+e
+X i
+d
+v
+e
+:1
+ep
+9 12
+le
+.
+a
+0
+r
+1
+n
+7
+i
+0
+n
+3
+g
+[
+l
+c
+ib
+s,
+r a
+s
+r
+t
+y
+a
+,
+t ].
+2 0
+U
+1
+R
+9
+L
+,
+a
+i
+K
+h
+n
+n
+t
+i
+t
+m
+d
+p
+,
+:
+B
+/
+b
+i
+/
+o
+J
+l
+d
+o
+m
+.
+x
+o
+.
+e
+d
+d
+O
+d
+o
+i
+h
+i
+c
+p
+.
+,
+a
+o
+e
+l
+r
+r
+g
+H
+fu
+/
+.
+P
+1
+s e
+h
+0
+d
+E
+o
+.1
+u
+to
+1
+m
+s
+n
+1
+k
+,
+i
+7
+i
+c
+n
+/
+s
+1
+Y
+2
+.
+t
+.
+i
+V
+8
+s
+I
+K
+s
+8
+I
+u
+u
+I
+1
+e
+,
+,
+6 0
+p
+v
+4
+D
+h
+o
+,
+.
+a
+l.
+n
+K
+to
+U
+i
+7
+m
+m
+R
+8
+,
+9
+L
+,
+8
+Y
+i
+,
+n
+.
+:
+h
+S
+t
+Y
+P
+D
+tp
+a
+I
+y
+E
+n
+s
+n
+:
+,
+g
+/
+a
+,
+/
+m
+w
+2
+i
+F
+0
+w
+c
+i
+1
+s
+n
+w
+1
+g
+.
+,
+e
+a
+s p
+r
+n
+i
+d
+p
+e
+t
+d
+p
+i
+i
+.
+s
+F
+g
+s
+l
+u
+i
+u
+t
+1
+e
+a
+c
+6
+t
+ll
+u
+9
+i
+m
+a
+b
+–
+t
+r
+1
+o
+i
+a
+o
+7
+d
+r
+n
+9
+y
+e
+s
+l
+.
+,
+[57]
+i
+C
+B
+h
+F
+n
+.
+t
+l
+o
+o
+t
+u
+p
+p
+P
+n
+r
+:
+y
+e
+d
+/
+n
+d
+t
+e
+/
+a
+h
+r
+l
+a
+p
+o
+e
+,
+r
+e
+g
+n
+x
+P
+a
+o
+,
+i
+u
+v
+.
+s
+J
+a
+.
+,
+.
+o
+P
+,
+M
+r
+r
+M
+g
+G
+e
+.
+/
+t
+a
+.
+B
+t
+a
+c
+e
+V
+r
+b
+h
+n
+u
+s
+a
+.
+h
+c
+/
+r
+L
+o
+h
+1
+o
+e
+f
+e
+9
+q
+e
+a
+r
+1
+u
+r
+,
+r
+,
+2
+a
+n
+M
+u
+.
+.
+R
+0
+x
+.
+R
+1
+.
+,
+P
+7
+e
+W
+A
+e
+0
+s
+r
+.
+.
+3
+e
+r
+1
+.
+o
+i
+G
+s
+2
+t
+s
+r
+,
+,
+a
+(
+É
+m
+2
+V
+.
+0
+f
+.
+D
+o
+1
+u
+r
+D
+1
+t
+c
+)
+,
+u
+h
+b
+2
+V
+e
+o
+8
+s
+.
+u
+n
+2
+M
+a
+r
+5
+g
+y
+–
+i
+,
+,
+c
+2
+h
+S
+8
+J
+e
+c
+.
+3
+l
+i
+0
+,
+k
+V
+.
+i
+B
+a
+t-
+n
+.
+l e
+d
+T
+a
+e
+h
+r
+r
+n
+i
+p
+r
+:
+l
+i
+a
+o
+M
+s
+n
+,
+a
+,
+c
+A
+O
+h
+.
+i
+.
+n
+P
+G
+e
+a
+r
+l
+s
+i
+e
+s
+s
+a
+o
+e
+r
+s
+l
+n
+,
+,
+i
+M
+n
+D
+g
+.
+.
+org/conference-proceedings-of-spie/7898/78980Z/Finger-tissue-model-and-
+[58] L. Buitinck, G. Louppe, M. Blondel, F. Pedregosa, A. Mueller, O. Grisel, V.
+[38]
+b
+A
+t
+f
+o
+a
+e
+r
+l
+.
+m
+t
+o
+g
+e
+o
+/
+W
+s
+a
+d
+1
+,
+t
+-
+0
+i
+a
+c
+p
+G
+.
+n
+1
+e
+g
+e
+0
+r
+R
+o
+,
+f
+1
+u
+a
+c
+6
+h
+J
+m
+s
+/
+e
+.
+i
+J
+a
+m
+j
+d
+.
+.
+n
+g
+-
+.
+s
+c
+F
+k
+a
+C
+s
+r
+i
+.
+p
+n
+e
+o
+2
+e
+e
+-
+s
+0
+c
+t
+m
+m
+0
+i
+t
+s
+r
+6
+a
+o
+s
+o
+n
+.
+u
+c
+0
+s
+h
+,
+e
+c
+5
+-
+i
+o
+.
+m
+p
+B
+0
+p
+h
+.
+2
+.
+i
+L
+c
+a
+2
+.
+n
+A
+,
+t
+s
+c
+J
+o
+t
+t
+o
+U
+u
+m
+a
+l
+d
+R
+l
+/
+i
+y
+7
+f
+L
+1
+f
+0
+0
+,
+o
+.
+h
+1
+f
+I
+(
+t
+.
+1
+2
+-
+t
+M
+1
+4
+p
+h
+7
+)
+s
+y
+.
+:
+/
+d
+/
+(
+1
+r
+/
+C
+2
+a
+2
+l
+h
+0
+i
+t
+.
+n
+i
+8
+o
+0
+o
+k
+u
+8
+6
+n
+i
+,
+1
+)
+n
+6
+g
+s
+S
+6
+0
+h
+t
+u
+1
+a
+4
+u
+l
+t
+1
+.
+b
+f
+f
+e
+a
+8
+u
+.
+s
+e
+t
+–
+l
+e
+l
+l
+6
+s
+.
+s
+o
+e
+1
+f
+v
+3
+o
+i
+5
+n
+e
+m
+,
+r .
+a
+c
+m
+h
+g
+o
+t
+n
+a
+m
+t
+e
+p
+r
+s
+s
+/
+:
+i
+/
+:
+r
+u
+/
+e
+m
+d
+t
+A
+r
+x
+ie
+.d
+s
+s
+v
+y
+u
+o
+e
+s
+l
+i
+/
+-
+-
+.
+[59]
+0
+D
+e
+N
+A
+x
+2
+.
+.
+i
+p
+c
+3
+E
+u
+e
+J
+8
+r
+r
+l
+o
+v
+a
+b
+i
+l
+e
+1
+e
+y
+,
+n
+.
+,
+,
+p
+c
+P
+e
+y
+B
+s
+b
+.
+.
+a
+f
+P
+r
+s
+H
+o
+e
+r
+o
+e
+l
+m
+i
+l
+t
+n
+t
+t
+,
+e
+e
+t h
+n
+s
+G
+:
+e
+h
+.
+o
+A
+s
+f
+c
+V
+e
+i
+p
+r
+k
+a
+y
+,
+i
+r
+t
+t
+o
+h
+-
+A
+q
+l
+o
+e
+.
+u
+n
+a
+a
+G
+r
+u
+n
+l
+r
+i
+x
+a
+b
+p
+,
+m
+r
+r
+a
+o
+A
+f
+r
+o
+j
+y
+P
+e
+r
+I
+c
+t
+o
+,
+t ,
+f
+d
+J
+2
+e
+a
+.
+s
+0
+l
+i
+g
+1
+g
+G
+o
+3
+n
+r
+r
+,
+o
+i t
+b
+U
+f
+h
+o
+l
+R
+m
+e
+r
+r
+L
+s
+,
+m
+h
+f
+R
+a
+t
+o
+t
+.
+c
+r
+p
+h
+s
+L
+t
+i
+:
+h
+n
+a
+/
+e
+y
+e
+/
+t
+a
+o
+b
+r
+l
+n
+x
+e
+a
+a
+i
+,
+s
+v
+e
+r
+.
+n
+l
+J
+o
+i
+.
+i
+n
+r
+n
+g
+e
+V
+g
+/
+a
+c
+a
+s
+n
+o
+b
+o
+r
+d
+s
+f
+r
+/
+e
+t
+e
+1
+w
+r
+c
+p
+3
+t
+a
+l
+i
+0
+a
+r
+o
+9
+e
+s
+n
+.
+:
+,
+pii/S0016703706020114. of experimental data, 2024, http://dx.doi.org/10.5281/ZENODO.5608581, URL
+[39] M.R. Maleki, A.M. Mouazen, H. Ramon, J. De Baerdemaeker, Multi- https://zenodo.org/doi/10.5281/zenodo.5608581.
+plicative scatter correction during on-line measurement with near in- [60] P. Virtanen, R. Gommers, T.E. Oliphant, M. Haberland, T. Reddy, D. Cournapeau,
+frared spectroscopy, Biosyst. Eng. 96 (3) (2007) 427–433, http://dx.doi. E. Burovski, P. Peterson, W. Weckesser, J. Bright, S.J. Van Der Walt, M. Brett, J.
+org/10.1016/j.biosystemseng.2006.11.014, URLhttps://www.sciencedirect.com/ Wilson, K.J. Millman, N. Mayorov, A.R.J. Nelson, E. Jones, R. Kern, E. Larson,
+science/article/pii/S1537511006004041. C.J. Carey, İ. Polat, Y. Feng, E.W. Moore, J. VanderPlas, D. Laxalde, J. Perktold,
+[40] J.A. Wegelin, A survey of partial least squares (PLS) methods, with emphasis on R. Cimrman, I. Henriksen, E.A. Quintero, C.R. Harris, A.M. Archibald, A.H.
+the two-block case, 2000. Ribeiro, F. Pedregosa, P. Van Mulbregt, SciPy 1.0 Contributors, A. Vijaykumar,
+[41] V. Esposito Vinzi, G. Russolillo, Partial least squares algorithms and methods, A.P. Bardelli, A. Rothberg, A. Hilboll, A. Kloeckner, A. Scopatz, A. Lee, A.
+WIREs Comput. Stat. 5 (1) (2013) 1–19, http://dx.doi.org/10.1002/wics.1239, Rokem, C.N. Woods, C. Fulton, C. Masson, C. Häggström, C. Fitzgerald, D.A.
+URLhttps://wires.onlinelibrary.wiley.com/doi/10.1002/wics.1239. Nicholson, D.R. Hagen, D.V. Pasechnik, E. Olivetti, E. Martin, E. Wieser, F. Silva,
+14
+C. Lange et al. Spectrochimica Acta Part A: Molecular and Biomolecular Spectroscopy 334 (2025) 125861
+F. Lenders, F. Wilhelm, G. Young, G.A. Price, G.-L. Ingold, G.E. Allen, G.R. Lee, [61] M. Lindauer, K. Eggensperger, M. Feurer, A. Biedenkapp, J. Marben, P. Müller, F.
+H. Audren, I. Probst, J.P. Dietrich, J. Silterra, J.T. Webber, J. Slavič, J. Nothman, Hutter, BOAH: A tool suite for multi-fidelity Bayesian optimization & analysis of
+J. Buchner, J. Kulick, J.L. Schönberger, J.V. De Miranda Cardoso, J. Reimer, J. hyperparameters, 2019, arXiv:1908.06756 [cs, stat]. URL http://arxiv.org/abs/
+Harrington, J.L.C. Rodríguez, J. Nunez-Iglesias, J. Kuczynski, K. Tritz, M. Thoma, 1908.06756.
+M. Newville, M. Kümmerer, M. Bolingbroke, M. Tartre, M. Pak, N.J. Smith, N. [62] The pandas development team, pandas-dev/pandas: Pandas, 2024,http://dx.doi.
+Nowaczyk, N. Shebanov, O. Pavlyk, P.A. Brodtkorb, P. Lee, R.T. McGibbon, R. org/10.5281/ZENODO.3509134, URL https://zenodo.org/doi/10.5281/zenodo.
+Feldbauer, S. Lewis, S. Tygier, S. Sievert, S. Vigna, S. Peterson, S. More, T. 3509134.
+Pudlik, T. Oshima, T.J. Pingel, T.P. Robitaille, T. Spura, T.R. Jones, T. Cera, [63] P. Moritz, R. Nishihara, S. Wang, A. Tumanov, R. Liaw, E. Liang, M. Elibol,
+T. Leslie, T. Zito, T. Krauss, U. Upadhyay, Y.O. Halchenko, Y. Vázquez-Baeza, Z. Yang, W. Paul, M.I. Jordan, I. Stoica, Ray: A distributed framework for
+SciPy 1.0: fundamental algorithms for scientific computing in python, Nature emerging AI applications, 2018, http://dx.doi.org/10.48550/arXiv.1712.05889,
+Methods 17 (3) (2020) 261–272,http://dx.doi.org/10.1038/s41592-019-0686-2, arXiv:1712.05889[cs, stat]. URLhttp://arxiv.org/abs/1712.05889.
+URLhttps://www.nature.com/articles/s41592-019-0686-2.
+15
