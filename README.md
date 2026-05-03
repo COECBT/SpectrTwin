@@ -83,27 +83,45 @@ pip install -r requirements.txt
 
 ## Running the Application
 
-### Main Application
+### Locally
+
+#### Main Application
 ```bash
 streamlit run Home.py
 ```
 
-### Fast Pipeline
+#### Fast Pipeline
 ```bash
 streamlit run streamlit_fast_pipeline.py
 ```
 
-### Full Pipeline
+#### Full Pipeline
 ```bash
 streamlit run streamlit_full_pipeline.py
 ```
 
-### Optimized Pipeline
+#### Optimized Pipeline
 ```bash
 streamlit run streamlit_optimized_pipeline.py
 ```
 
 The application will open in your default web browser at `http://localhost:8501`
+
+### Deploy on Streamlit Cloud
+
+1. Push your repository to GitHub (already done!)
+2. Go to [Streamlit Cloud](https://streamlit.io/cloud)
+3. Click "New app" and connect your GitHub repository
+4. Select `Home.py` as the main file
+5. Set up secrets in Streamlit Cloud dashboard:
+   - Go to app settings → Secrets
+   - Add your Groq API key:
+     ```
+     GROQ_API_KEY = "your_api_key_here"
+     ```
+6. Update `chatbot.py` to use secrets from environment variables
+
+**Note:** Streamlit Cloud automatically installs packages from `requirements.txt`, so ensure all dependencies are listed there.
 
 ## Usage
 
