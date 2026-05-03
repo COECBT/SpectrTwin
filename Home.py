@@ -82,10 +82,9 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("💡 **Powered by Spectroscopy AI**")
 
+# Safely import and render chatbot
 try:
     from chatbot import render_chatbot
     render_chatbot("Home Page")
-except ImportError as e:
-    st.sidebar.warning(f"⚠️ Chatbot feature unavailable: {str(e)}")
 except Exception as e:
-    st.sidebar.warning(f"⚠️ Chatbot error: {str(e)}")
+    st.sidebar.info("💬 Chatbot feature requires additional dependencies.")

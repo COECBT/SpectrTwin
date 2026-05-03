@@ -14,7 +14,7 @@ def init_chatbot_state():
     if "groq_api_key" not in st.session_state:
         # Try multiple sources for API key:
         # 1. Streamlit secrets (for Cloud deployment)
-        # 2. Environment variables
+        # 2. Environment variables  
         # 3. Default empty
         try:
             st.session_state.groq_api_key = st.secrets.get("GROQ_API_KEY", "")
