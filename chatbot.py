@@ -1,6 +1,12 @@
 import streamlit as st
-from groq import Groq
 import os
+
+try:
+    from groq import Groq
+    GROQ_AVAILABLE = True
+except ImportError:
+    GROQ_AVAILABLE = False
+    Groq = None
 
 def init_chatbot_state():
     if "messages" not in st.session_state:
@@ -29,6 +35,10 @@ PAGE_EXPLANATIONS = {
 }
 
 def render_chatbot(page_context: str):
+    if not GROQ_AVAILABLE:
+        st.sidebar.info("💬 AI Chatbot: Groq module not installed. Install with: `pip install groq`")
+        return
+    
     init_chatbot_state()
     
     # CSS to make the Popover float at the bottom right
@@ -83,6 +93,9 @@ def render_chatbot(page_context: str):
             st.session_state.messages.append({"role": "user", "content": prompt})
             
             try:
+                if not GROQ_AVAILABLE:
+                    raise ImportError("Groq module not available. Please install it with: pip install groq")
+                    
                 client = Groq(api_key=st.session_state.groq_api_key)
                 
                 system_prompt = (
