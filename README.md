@@ -105,6 +105,38 @@ streamlit run streamlit_full_pipeline.py
 streamlit run streamlit_optimized_pipeline.py
 ```
 
+#### Real-Time Data Transfer Client
+**Note:** `realtime_client.py` is a **separate standalone application** designed to run on a different system (instrument/data source) for real-time spectral data transfer.
+
+**Setup and Usage:**
+1. Install dependencies on the data source system:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. Configure the client:
+   - Edit `realtime_client.py` with your:
+     - Server IP/hostname (where SpectraTwin app is running)
+     - Port configuration
+     - Data source parameters
+
+3. Run on the data source system:
+   ```bash
+   python realtime_client.py
+   ```
+
+4. Access real-time data in SpectraTwin via **09_Real_Time_Transfer** page
+
+**Architecture:**
+```
+Data Source System        →    SpectraTwin System
+(realtime_client.py)           (Main App)
+  ↓                               ↓
+ Instrument/Device          Streamlit Interface
+  ↓                               ↓
+Network Connection          View Live Data
+```
+
 The application will open in your default web browser at `http://localhost:8501`
 
 ### Deploy on Streamlit Cloud
@@ -158,11 +190,66 @@ See full list in `requirements.txt`
 
 ## Real-Time Features
 
-The application supports real-time spectral data transfer through:
-- `realtime_client.py` - Client for streaming spectral data
-- `09_Real_Time_Transfer.py` - Real-time data processing interface
+The application supports real-time spectral data transfer through a client-server architecture:
+
+### Real-Time Client (`realtime_client.py`)
+**Important:** This is a **separate standalone application** that runs on your **data source system** (instrument/sensor system), NOT on the SpectraTwin main app system.
+
+**Features:**
+- Streams spectral data in real-time to SpectraTwin server
+- Runs independently on data acquisition hardware
+- Supports continuous data monitoring
+- Configurable network endpoints
+
+**Usage:**
+1. Run on your data source/instrument system:
+   ```bash
+   python realtime_client.py
+   ```
+
+2. Configure connection parameters:
+   - Server IP: where SpectraTwin is running
+   - Port: configured in both client and server
+   - Data format: depends on your instrument
+
+3. Monitor incoming data in SpectraTwin via **Page 09: Real-Time Transfer**
+
+### Real-Time Processing (`09_Real_Time_Transfer.py`)
+- Web interface for viewing live spectral data
+- Real-time visualization and analysis
+- Data logging and archival
+- Alert/notification system
+
+**System Architecture:**
+```
+┌─────────────────────────────┐
+│  Data Source System         │
+│  (Separate Computer)        │
+│                             │
+│  • realtime_client.py       │
+│  • FTIR/Raman/NIR Device    │
+│  • Sensors/Instruments      │
+└────────────────┬────────────┘
+                 │ Network Connection
+                 │ (TCP/IP or other)
+                 ↓
+┌─────────────────────────────┐
+│  SpectraTwin Main System    │
+│  (Streamlit App)            │
+│                             │
+│  • 09_Real_Time_Transfer.py │
+│  • Live Dashboard           │
+│  • Data Analysis            │
+└─────────────────────────────┘
+```
 
 ## Troubleshooting
+
+**Real-Time Connection Issues:**
+- Verify network connectivity between systems
+- Check firewall settings allow data transfer
+- Ensure `realtime_client.py` is running on data source system
+- Check configured IP and port match in both systems
 
 **Issue: Groq API Key Error**
 - Ensure your API key is correctly set in `Api.txt`
