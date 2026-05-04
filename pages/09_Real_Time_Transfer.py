@@ -153,17 +153,36 @@ col_run, col_stop = st.columns(2)
 
 with col_run:
     if st.button("▶️ Start Server", use_container_width=True):
-        if st.session_state.observer is None:
-            if not os.path.exists(watch_folder):
-                st.error(f"Folder '{watch_folder}' does not exist. Please create it first.")
-            else:
-                loaded_model = pickle.load(model_file) if model_file else None
-                loaded_pipe = pickle.load(pipeline_file) if pipeline_file else None
+        # Validate folder exists
+        if not os.path.exists(watch_folder):
+            st.error(f"❌ Folder '{watch_folder}' does not exist. Please create it first or enter a valid path.")
+        elif not os.path.isdir(watch_folder):
+            st.error(f"❌ Path '{watch_folder}' is not a directory.")
+        elif st.session_state.observer is not None:
+            st.warning("⚠️ Server is already running. Stop it first before restarting.")
+        else:
+            try:
+                # Load models
+                loaded_model = None
+                loaded_pipe = None
+                
+                if model_file:
+                    try:
+                        loaded_model = pickle.load(model_file)
+                    except Exception as e:
+                        st.error(f"Failed to load model: {e}")
+                
+                if pipeline_file:
+                    try:
+                        loaded_pipe = pickle.load(pipeline_file)
+                    except Exception as e:
+                        st.error(f"Failed to load pipeline: {e}")
                 
                 # 1. Start WebSockets in background thread
                 ws_t = threading.Thread(target=run_asyncio_loop, args=(port, mq), daemon=True)
                 ws_t.start()
                 st.session_state.ws_thread = ws_t
+                time.sleep(0.5)  # Give thread time to start
                 
                 # 2. Start Watchdog
                 event_handler = SpectraFileHandler(mq, loaded_model, loaded_pipe)
@@ -172,22 +191,43 @@ with col_run:
                 obs.start()
                 st.session_state.observer = obs
                 
+                st.success("✅ Server started successfully!")
                 st.rerun()
+                
+            except Exception as e:
+                st.error(f"Failed to start server: {str(e)}")
 
 with col_stop:
     if st.button("⏹️ Stop Server", use_container_width=True):
         if st.session_state.observer is not None:
-            st.session_state.observer.stop()
-            st.session_state.observer.join()
-            st.session_state.observer = None
-            
-            if st.session_state.loop is not None:
-                st.session_state.loop.call_soon_threadsafe(st.session_state.loop.stop)
-            
-            st.rerun()
+            try:
+                st.session_state.observer.stop()
+                st.session_state.observer.join(timeout=5)
+                st.session_state.observer = None
+                
+                if st.session_state.loop is not None:
+                    st.session_state.loop.call_soon_threadsafe(st.session_state.loop.stop)
+                    st.session_state.loop = None
+                
+                st.success("✅ Server stopped successfully!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error stopping server: {str(e)}")
+        else:
+            st.info("ℹ️ Server is not running.")
+
+# Display status
+st.write("---")
+st.subheader("📊 Server Status")
 
 if st.session_state.observer is not None:
-    st.success(f"🟢 **Server Running!** Monitoring `{watch_folder}` for new `.csv/.txt` spectra.")
-    st.info(f"Clients can connect via `ws://YOUR_SERVER_IP:{port}`")
+    st.success(f"🟢 **Server Running!**")
+    st.info(f"""
+    📂 **Monitoring**: `{watch_folder}`
+    🔌 **WebSocket Port**: {port}
+    👥 **Connection URL**: `ws://YOUR_SERVER_IP:{port}`
+    
+    ℹ️ The server will automatically process new `.csv`, `.txt`, `.xlsx`, or `.spa` files.
+    """)
 else:
-    st.warning("🔴 Server is currently stopped.")
+    st.warning("🔴 **Server is stopped.** Click 'Start Server' above to begin monitoring.")
