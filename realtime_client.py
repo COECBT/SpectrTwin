@@ -81,11 +81,16 @@ class RealTimeSpectraClient:
                 messagebox.showerror("Invalid URL", "URL must start with 'ws://' or 'wss://'")
                 return
             
+            # Validate URL has port
+            if ":" not in url.split("//")[1]:
+                messagebox.showerror("Invalid URL", "URL must include a port number (e.g., ws://127.0.0.1:8765)")
+                return
+            
             self.ws_thread = threading.Thread(target=self.start_async_loop, args=(url,), daemon=True)
             self.ws_thread.start()
             self.connect_btn.config(text="Connecting...")
             self.connect_btn.state(['disabled'])
-            self.status_lbl.config(text="Connecting...", foreground="orange")
+            self.status_lbl.config(text="Connecting (may take 2-3s)...", foreground="orange")
         else:
             if self.ws_loop:
                 self.ws_loop.call_soon_threadsafe(self.ws_loop.stop)
@@ -104,7 +109,7 @@ class RealTimeSpectraClient:
             
     async def listen_to_server(self, url):
         try:
-            async with websockets.connect(url) as websocket:
+            async with websockets.connect(url, ping_interval=20, ping_timeout=10) as websocket:
                 self.data_queue.put({"type": "status", "msg": "✅ Connected", "color": "green"})
                 self.connected = True
                 while True:
@@ -112,17 +117,48 @@ class RealTimeSpectraClient:
                     data = json.loads(message)
                     self.data_queue.put({"type": "data", "payload": data})
         except ConnectionRefusedError:
-            self.data_queue.put({"type": "status", "msg": "❌ Connection Refused - Server not running", "color": "red"})
+            self.data_queue.put({
+                "type": "status", 
+                "msg": "❌ Connection Refused - Server not running\n📍 Make sure the Streamlit Real-Time Transfer page is open and 'Start Server' is clicked", 
+                "color": "red"
+            })
             self.connected = False
         except asyncio.TimeoutError:
-            self.data_queue.put({"type": "status", "msg": "❌ Connection Timeout - Check server URL", "color": "red"})
+            self.data_queue.put({
+                "type": "status", 
+                "msg": "❌ Connection Timeout\n📍 Check if server URL is correct", 
+                "color": "red"
+            })
             self.connected = False
         except OSError as e:
-            self.data_queue.put({"type": "status", "msg": f"❌ Network Error: {str(e)[:50]}", "color": "red"})
+            error_details = str(e)[:100]
+            if "Errno 111" in error_details or "Connection refused" in error_details:
+                self.data_queue.put({
+                    "type": "status", 
+                    "msg": f"❌ Server Not Running\n📍 Verify the server is running on the Streamlit page", 
+                    "color": "red"
+                })
+            else:
+                self.data_queue.put({
+                    "type": "status", 
+                    "msg": f"❌ Network Error: {error_details}", 
+                    "color": "red"
+                })
+            self.connected = False
+        except json.JSONDecodeError as e:
+            self.data_queue.put({
+                "type": "status", 
+                "msg": f"❌ Invalid Data Format\n📍 Server sent malformed data", 
+                "color": "red"
+            })
             self.connected = False
         except Exception as e:
-            error_msg = str(e)[:80]  # Truncate long error messages
-            self.data_queue.put({"type": "status", "msg": f"❌ Error: {error_msg}", "color": "red"})
+            error_msg = str(e)[:80]
+            self.data_queue.put({
+                "type": "status", 
+                "msg": f"❌ Error: {error_msg}", 
+                "color": "red"
+            })
             self.connected = False
             
     def process_queue(self):

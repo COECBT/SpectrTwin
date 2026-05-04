@@ -78,6 +78,8 @@ if "loop" not in st.session_state:
     st.session_state.loop = None
 if "server_start_time" not in st.session_state:
     st.session_state.server_start_time = None
+if "ws_error" not in st.session_state:
+    st.session_state.ws_error = None
 
 mq = st.session_state.rt_queue
 
@@ -138,19 +140,39 @@ async def ws_handler(websocket, message_queue):
             print(f"WS Error: {e}")
             await asyncio.sleep(1)
 
+def check_port_available(port):
+    """Check if a port is available"""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('0.0.0.0', port))
+            return True
+    except OSError:
+        return False
+
 async def start_ws_server(port, message_queue):
     import functools
-    async with websockets.serve(functools.partial(ws_handler, message_queue=message_queue), "0.0.0.0", port):
-        await asyncio.Future()  # run forever
+    try:
+        async with websockets.serve(functools.partial(ws_handler, message_queue=message_queue), "0.0.0.0", port):
+            print(f"✅ WebSocket server started on port {port}")
+            await asyncio.Future()  # run forever
+    except OSError as e:
+        print(f"❌ Port {port} is already in use or inaccessible: {e}")
+        raise
+    except Exception as e:
+        print(f"❌ WebSocket server error: {e}")
+        raise
 
 def run_asyncio_loop(port, message_queue):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     st.session_state.loop = loop
+    st.session_state.ws_error = None
     try:
         loop.run_until_complete(start_ws_server(port, message_queue))
     except Exception as e:
-        print(f"Asyncio Loop Error: {e}")
+        error_msg = str(e)
+        st.session_state.ws_error = error_msg
+        print(f"❌ Asyncio Loop Error: {error_msg}")
 
 col_run, col_stop = st.columns(2)
 
@@ -159,43 +181,60 @@ with col_run:
         # Use session state folder path
         folder_to_monitor = st.session_state.watch_folder
         
-        # Validate and create folder if needed
+        # 1. Check if port is available
+        if not check_port_available(port):
+            st.error(f"❌ **Port {port} is already in use!**")
+            st.info(f"Either:\n- Change the port number above and try again\n- Stop the other server using port {port}")
+            st.stop()
+        
+        # 2. Validate and create folder if needed
         if not os.path.exists(folder_to_monitor):
             try:
                 os.makedirs(folder_to_monitor, exist_ok=True)
                 st.success(f"✅ Created folder: {folder_to_monitor}")
-                st.info("Folder created successfully. Starting server...")
             except Exception as e:
                 st.error(f"❌ Failed to create folder '{folder_to_monitor}': {str(e)}")
                 st.stop()
         
         if not os.path.isdir(folder_to_monitor):
             st.error(f"❌ Path '{folder_to_monitor}' is not a directory.")
-        elif st.session_state.observer is not None:
+            st.stop()
+        
+        if st.session_state.observer is not None:
             st.warning("⚠️ Server is already running. Stop it first before restarting.")
-        else:
-            try:
-                # Load models
-                loaded_model = None
-                loaded_pipe = None
-                
-                if model_file:
-                    try:
-                        loaded_model = pickle.load(model_file)
-                    except Exception as e:
-                        st.error(f"Failed to load model: {e}")
-                
-                if pipeline_file:
-                    try:
-                        loaded_pipe = pickle.load(pipeline_file)
-                    except Exception as e:
-                        st.error(f"Failed to load pipeline: {e}")
-                
+            st.stop()
+        
+        try:
+            # Load models
+            loaded_model = None
+            loaded_pipe = None
+            
+            if model_file:
+                try:
+                    loaded_model = pickle.load(model_file)
+                except Exception as e:
+                    st.error(f"Failed to load model: {e}")
+            
+            if pipeline_file:
+                try:
+                    loaded_pipe = pickle.load(pipeline_file)
+                except Exception as e:
+                    st.error(f"Failed to load pipeline: {e}")
+            
+            # Show starting status
+            with st.spinner(f"🚀 Starting server on port {port}..."):
                 # 1. Start WebSockets in background thread
                 ws_t = threading.Thread(target=run_asyncio_loop, args=(port, mq), daemon=True)
                 ws_t.start()
                 st.session_state.ws_thread = ws_t
-                time.sleep(0.5)  # Give thread time to start
+                time.sleep(1)  # Give thread time to start and report errors
+                
+                # Check if WebSocket server started successfully
+                if st.session_state.ws_error:
+                    st.error(f"❌ **Failed to start WebSocket server**\n{st.session_state.ws_error}")
+                    st.info("Try changing the port number or restart the app.")
+                    st.session_state.ws_error = None
+                    st.stop()
                 
                 # 2. Start Watchdog
                 event_handler = SpectraFileHandler(mq, loaded_model, loaded_pipe)
@@ -204,13 +243,14 @@ with col_run:
                 obs.start()
                 st.session_state.observer = obs
                 st.session_state.server_start_time = time.time()
-                
-                st.success("✅ Server started successfully!")
-                st.balloons()  # Fun visual feedback
-                st.rerun()
-                
-            except Exception as e:
-                st.error(f"Failed to start server: {str(e)}")
+            
+            st.success("✅ Server started successfully!")
+            st.balloons()  # Fun visual feedback
+            st.rerun()
+            
+        except Exception as e:
+            st.error(f"Failed to start server: {str(e)}")
+            st.stop()
 
 with col_stop:
     if st.button("⏹️ Stop Server", use_container_width=True):
