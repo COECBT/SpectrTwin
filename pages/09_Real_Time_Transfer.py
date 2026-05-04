@@ -35,7 +35,7 @@ with col1:
         
     f_col1, f_col2 = st.columns([3, 1])
     with f_col1:
-        watch_folder = st.text_input("Folder to Watch", value=st.session_state.watch_folder)
+        watch_folder = st.text_input("Folder to Watch", value=st.session_state.watch_folder, placeholder="e.g., C:\\Spectra_Incoming or N:\\Data\\Spectra")
     with f_col2:
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
         if st.button("📁 Browse", use_container_width=True):
@@ -54,7 +54,7 @@ with col1:
                 st.warning("📌 File browser unavailable on this system (headless environment). Please type the folder path directly.")
                 
     # Keep session state synced if user manually types in the field
-    if watch_folder != st.session_state.watch_folder:
+    if watch_folder and watch_folder != st.session_state.watch_folder:
         st.session_state.watch_folder = watch_folder
         
     port = st.number_input("WebSocket Broadcast Port", min_value=1024, max_value=65535, value=8765)
@@ -153,11 +153,21 @@ col_run, col_stop = st.columns(2)
 
 with col_run:
     if st.button("▶️ Start Server", use_container_width=True):
-        # Validate folder exists
-        if not os.path.exists(watch_folder):
-            st.error(f"❌ Folder '{watch_folder}' does not exist. Please create it first or enter a valid path.")
-        elif not os.path.isdir(watch_folder):
-            st.error(f"❌ Path '{watch_folder}' is not a directory.")
+        # Use session state folder path
+        folder_to_monitor = st.session_state.watch_folder
+        
+        # Validate and create folder if needed
+        if not os.path.exists(folder_to_monitor):
+            try:
+                os.makedirs(folder_to_monitor, exist_ok=True)
+                st.success(f"✅ Created folder: {folder_to_monitor}")
+                st.info("Folder created successfully. Starting server...")
+            except Exception as e:
+                st.error(f"❌ Failed to create folder '{folder_to_monitor}': {str(e)}")
+                st.stop()
+        
+        if not os.path.isdir(folder_to_monitor):
+            st.error(f"❌ Path '{folder_to_monitor}' is not a directory.")
         elif st.session_state.observer is not None:
             st.warning("⚠️ Server is already running. Stop it first before restarting.")
         else:
@@ -187,7 +197,7 @@ with col_run:
                 # 2. Start Watchdog
                 event_handler = SpectraFileHandler(mq, loaded_model, loaded_pipe)
                 obs = Observer()
-                obs.schedule(event_handler, watch_folder, recursive=False)
+                obs.schedule(event_handler, folder_to_monitor, recursive=False)
                 obs.start()
                 st.session_state.observer = obs
                 
@@ -223,7 +233,7 @@ st.subheader("📊 Server Status")
 if st.session_state.observer is not None:
     st.success(f"🟢 **Server Running!**")
     st.info(f"""
-    📂 **Monitoring**: `{watch_folder}`
+    📂 **Monitoring**: `{st.session_state.watch_folder}`
     🔌 **WebSocket Port**: {port}
     👥 **Connection URL**: `ws://YOUR_SERVER_IP:{port}`
     
