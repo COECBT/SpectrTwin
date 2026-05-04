@@ -3,13 +3,19 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 import os
 import sys
+import importlib.util
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PARENT_DIR = os.path.dirname(SCRIPT_DIR)
 if PARENT_DIR not in sys.path:
     sys.path.insert(0, PARENT_DIR)
 
-from data_augmentation import DataAugmentor
+# Import data_augmentation module
+spec = importlib.util.spec_from_file_location("data_augmentation", os.path.join(PARENT_DIR, "data_augmentation.py"))
+data_augmentation_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(data_augmentation_module)
+DataAugmentor = data_augmentation_module.DataAugmentor
+
 from midel import ReadingData, Models, optuna_Model, AutoModelSelector, WaveletDenoiser, OutlierRemover
 import matplotlib
 matplotlib.use('Agg')
